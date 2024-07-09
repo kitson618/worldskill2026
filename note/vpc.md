@@ -134,7 +134,8 @@ echo "NAT_GW2=$NAT_GW2"
 aws iam create-role --role-name VPCFlowLogRole --assume-role-policy-document file://trust-policy.json
 
 # Attach the policy
-aws iam put-role-policy --role-name VPCFlowLogRole --policy-name VPCFlowLogPolicy --policy-document file://vpc-flow-log-policy.jsonaws ec2 create-flow-logs --resource-type VPC --resource-ids $VPC_ID --traffic-type ALL --log-group-name VPCFlowLogs --deliver-logs-permission-arn arn:aws:iam::608671652196:role/VPCFlowLogRole
+aws iam put-role-policy --role-name VPCFlowLogRole --policy-name VPCFlowLogPolicy --policy-document file://vpc-flow-log-policy.json
+
 ```
 
 ```bash
