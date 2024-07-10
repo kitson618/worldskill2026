@@ -173,3 +173,11 @@ helm install nginx-ingress-controller-release bitnami/nginx-ingress-controller \
 export KUBECONFIG=$PWD/k8s-config/edge-kubeconfig.yml
 ```
 
+
+## Helm
+
+```
+helm create lab1
+helm install lab  . -n lab  --create-namespace
+
+```
