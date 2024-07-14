@@ -1,0 +1,327 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'game118_main'
+Parameters:
+
+  HenghaMasterAccountID:
+    Description: "Account id of the master."
+    Type: String
+    Default: "608671652196"
+
+Resources:
+  MyLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: MyLambdaExecutionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaExecutionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sts:GetCallerIdentity
+                Resource: '*'
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CodeBuildRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "codebuild.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+  CodeBuildPolicy:
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyName: "root"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Resource: "*"
+            Action:
+              - "s3:*"
+              - "logs:CreateLogGroup"
+              - "logs:CreateLogStream"
+              - "logs:PutLogEvents"
+              - "codecommit:GitPull"
+              - "codebuild:CreateReportGroup"
+              - "codebuild:CreateReport"
+              - "codebuild:UpdateReport"
+              - "codebuild:BatchPutTestCases"
+              - "codebuild:BatchPutCodeCoverages"
+      Roles:
+        - !Ref CodeBuildRole
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CodePipelineRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "codepipeline.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+  CodePipelinPolicy:
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyName: "root"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Resource: "*"
+            Action:
+              - "iam:PassRole"
+            Condition:
+              StringEqualsIfExists:
+                iam:PassedToService:
+                  - "cloudformation.amazonaws.com"
+                  - "elasticbeanstalk.amazonaws.com"
+                  - "ec2.amazonaws.com"
+                  - "ecs-tasks.amazonaws.com"
+          - Effect: "Allow"
+            Resource: "*"
+            Action:
+              - "codecommit:CancelUploadArchive"
+              - "codecommit:GetBranch"
+              - "codecommit:GetCommit"
+              - "codecommit:GetRepository"
+              - "codecommit:GetUploadArchiveStatus"
+              - "codecommit:UploadArchive"
+          - Effect: "Allow"
+            Resource: "*"
+            Action:
+              - "codedeploy:CreateDeployment"
+              - "codedeploy:GetApplication"
+              - "codedeploy:GetApplicationRevision"
+              - "codedeploy:GetDeployment"
+              - "codedeploy:GetDeploymentConfig"
+              - "codedeploy:RegisterApplicationRevision"
+          - Effect: "Allow"
+            Resource: "*"
+            Action: "codestar-connections:UseConnection"
+          - Effect: "Allow"
+            Resource: "*"
+            Action: 
+              - "elasticbeanstalk:*"
+              - "ec2:*"
+              - "elasticloadbalancing:*"
+              - "autoscaling:*"
+              - "cloudwatch:*"
+              - "s3:*"
+              - "sns:*"
+              - "cloudformation:*"
+              - "rds:*"
+              - "sqs:*"
+              - "ecs:*"
+          - Effect: "Allow"
+            Resource: "*"
+            Action:
+              - "lambda:InvokeFunction"
+              - "lambda:ListFunctions"
+          - Effect: "Allow"
+            Resource: "*"
+            Action:
+              - "cloudformation:CreateStack"
+              - "cloudformation:DeleteStack"
+              - "cloudformation:DescribeStacks"
+              - "cloudformation:UpdateStack"
+              - "cloudformation:CreateChangeSet"
+              - "cloudformation:DeleteChangeSet"
+              - "cloudformation:DescribeChangeSet"
+              - "cloudformation:ExecuteChangeSet"
+              - "cloudformation:SetStackPolicy"
+              - "cloudformation:ValidateTemplate"
+          - Effect: "Allow"
+            Resource: "*"
+            Action:
+              - "codebuild:BatchGetBuilds"
+              - "codebuild:StartBuild"
+              - "codebuild:BatchGetBuildBatches"
+              - "codebuild:StartBuildBatch"
+          - Effect: "Allow"
+            Resource: "*"
+            Action:
+              - "servicecatalog:ListProvisioningArtifacts"
+              - "servicecatalog:CreateProvisioningArtifact"
+              - "servicecatalog:DescribeProvisioningArtifact"
+              - "servicecatalog:DeleteProvisioningArtifact"
+              - "servicecatalog:UpdateProduct"
+          - Effect: "Allow"
+            Resource: "*"
+            Action:
+              - "cloudformation:ValidateTemplate"
+              - "ecr:DescribeImages"
+              - "states:DescribeExecution"
+              - "states:DescribeStateMachine"
+              - "states:StartExecution"
+              - "appconfig:StartDeployment"
+              - "appconfig:StopDeployment"
+              - "appconfig:GetDeployment"
+      Roles:
+        - !Ref CodePipelineRole
+  CloudFormationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CloudFormationRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "cloudformation.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+  CloudFormationPolicy:
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyName: "root"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Deny"
+            Resource:
+              - !Sub arn:aws:iam::${AWS::AccountId}:role/HengHaTeamRole
+              - !GetAtt WSEC2Role.Arn
+              - !GetAtt CodeBuildRole.Arn
+              - !GetAtt CloudFormationRole.Arn
+              - !GetAtt CodePipelineRole.Arn
+            Action:
+              - "iam:Remove*"
+              - "iam:Delete*"
+              - "iam:AttachRolePolicy"
+              - "iam:PutRolePolicy"
+          - Effect: "Deny"
+            Resource: "*"
+            Action:
+              - "iam:AddUserToGroup"
+              - "iam:AttachGroupPolicy"
+              - "iam:AttachUserPolicy"
+              - "iam:CreateGroup"
+              - "iam:CreateUser"
+              - "iam:CreateRole"
+              - "iam:CreatePolicy"
+              - "eks:CreateFargateProfile"
+          - Effect: "Deny"
+            Resource: !Sub "arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/*"
+            Action: "ec2:RunInstances"
+            Condition:
+              StringNotEquals:
+                ec2:InstanceType: "t3.micro"
+          - Effect: "Deny"
+            Resource: "*"
+            NotAction:
+              - "iam:*"
+              - "ec2:*"
+              - "codebuild:*"
+              - "s3:*"
+              - "logs:*"
+              - "codepipeline:*"
+              - "sts:*"
+              - "codecommit:*"
+              - "codedeploy:*"
+              - "elasticloadbalancing:*"
+              - "autoscaling:*"
+              - "cloudwatch:*"
+              - "sns:*"
+              - "rds:*"
+              - "sqs:*"
+              - "lambda:*"
+              - "ecr:*"
+              - "states:*"
+              - "appconfig:*"
+              - "secretsmanager:*"
+              - "ssm:*"
+              - "kms:*"
+              - "apigateway:*"
+              - "cloudfront:*"
+              - "waf:*"
+              - "wafv2:*"
+              - "waf-regional:*"
+              - "cloudformation:CreateChangeSet"
+              - "cloudformation:CreateStack"
+              - "cloudformation:UpdateStack"
+              - "cloudformation:DescribeStacks"
+              - "cloudformation:DescribeChangeSet"
+              - "cloudformation:ExecuteChangeSet"
+              - "cloudformation:DeleteChangeSet"
+      Roles:
+        - !Ref CloudFormationRole
+  WSEC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: WSEC2Role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "ec2.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+  EC2Policy:
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyName: "root"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Resource: "*"
+            Action:
+              - "secretsmanager:Describe*"
+              - "secretsmanager:Get*"
+              - "secretsmanager:List*"
+              - "appconfig:*"
+              - "ssm:*"
+              - "codecommit:*"
+          - Effect: "Deny"
+            Resource: "*"
+            Action:
+              - "codecommit:CreateRepository"
+              - "codecommit:DeleteRepository"
+      Roles:
+        - !Ref WSEC2Role
+  LambdaRefundRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: RefundRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal: 
+              Service:
+                - "lambda.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Description: Allow Lambda deal refund data that it store in S3
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess  
+
