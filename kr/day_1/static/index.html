@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" class="position-relative w-100 h-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <title>WorldSkills Korea 1st</title>
+</head>
+<body class="position-absolute w-100 text-center top-50 translate-middle-y">
+    <h1>WorldSkills Korea 1st</h1>
+    <div class="d-flex justify-content-center">
+        <div class="border border-secondary m-3">
+            <h2>Customer</h2>
+            <div class="border border-success m-2 p-2">
+                <h3>GET</h3>
+    
+                <label for="ct_id">ID</label>
+                <input type="text" id="ct_id">
+    
+                <button class="btn btn-success" onclick="get_customer()">Load</button>
+                <div class="bg-success-subtle w-100 mt-2 fw-bold" style="min-height: 30px;" id="get_customer">
+                    Response
+                </div>
+            </div>
+            <div class="border border-primary m-2 p-2">
+                <h3>POST</h3>
+    
+                <label for="customer_id">ID</label>
+                <input type="text" id="customer_id">
+    
+                <label for="customer_name">Name</label>
+                <input type="text" id="customer_name">
+                
+                <label for="customer_gender">Gender</label>
+                <input type="text" id="customer_gender">
+                
+                <button class="btn btn-primary" onclick="post_customer()">Save</button>
+                <div class="bg-primary-subtle w-100 mt-2 fw-bold" style="min-height: 30px;" id="post_customer">
+                    Response
+                </div>
+            </div>
+        </div>
+        <div class="border border-secondary m-3">
+            <h2>Product</h2>
+            <div class="border border-success m-2 p-2">
+                <h3>GET</h3>
+    
+                <label for="pd_id">ID</label>
+                <input type="text" id="pd_id">
+    
+                <button class="btn btn-success" onclick="get_product()">Load</button>
+                <div class="bg-success-subtle w-100 mt-2 fw-bold" style="min-height: 30px;" id="get_product">
+                    Response
+                </div>
+            </div>
+            <div class="border border-primary m-2 p-2">
+                <h3>POST</h3>
+    
+                <label for="product_id">ID</label>
+                <input type="text" name="id" id="product_id">
+    
+                <label for="product_name">Name</label>
+                <input type="text" name="name" id="product_name">
+    
+                <label for="product_category">Category</label>
+                <input type="text" name="category" id="product_category">
+                
+                <button class="btn btn-primary" onclick="post_product()">Save</button>
+                <div class="bg-primary-subtle w-100 mt-2 fw-bold" style="min-height: 30px;" id="post_product">
+                    Response
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="border border-secondary my-3 mx-auto w-75">
+        <h2>Order</h2>
+        <div class="border border-success m-2 p-2">
+            <h3>GET</h3>
+
+            <label for="od_id">ID</label>
+            <input type="text" id="od_id">
+
+            <button class="btn btn-success" onclick="get_order()">Load</button>
+            <div class="bg-success-subtle w-100 mt-2 fw-bold" style="min-height: 30px;" id="get_order">
+                Response
+            </div>
+        </div>
+        <div class="border border-primary m-2 p-2">
+            <h3>POST</h3>
+
+            <label for="order_id">ID</label>
+            <input type="text" name="id" id="order_id">
+
+            <label for="order_cid">Customer ID</label>
+            <input type="text" name="customerid" id="order_cid">
+
+            <label for="order_pid">Product ID</label>
+            <input type="text" name="productid" id="order_pid">
+
+            <button class="btn btn-primary" onclick="post_order()">Save</button>
+            <div class="bg-primary-subtle w-100 mt-2 fw-bold" style="min-height: 30px;" id="post_order">
+                Response
+            </div>
+        </div>
+    </div>
+    <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+export AWS_ACCESS_KEY_ID="AKIA4MTWNUBMLF26N6MB"
+export AWS_SECRET_ACCESS_KEY="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"
+
+
+Console sign-in URL
+
+https://hengha-851725623384.signin.aws.amazon.com/console
+User name
+
+admin
+Console password
+
+Qwesaw123$
+Hide
+
+CREATE TABLE cloudraiser (
+    username VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    PRIMARY KEY (username)
+);
+a75e2ef295cb2aca95d686718b9ed9ab
+INSERT INTO cloudraiser (username, password) VALUES
+    ('Admin01', 'Passw@rd2024'),
+    ('Admin02', 'Passw@rd2024'),
+    ('Admin03', 'Passw@rd2024');
+
+INSERT INTO cloudraiser (username, password) VALUES
+ ('Admin01', 'Passw@rd2024'), 
+ ('Admin02', 'Passw@rd2024'), 
+ ('Admin03', 'Passw@rd2024');

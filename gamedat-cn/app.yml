@@ -187,7 +187,6 @@ Resources:
             SSEAlgorithm: AES256
 
 # Vpc FlowLog
-
   S3Flowlog:
     DependsOn: s3Bucket
     Type: AWS::EC2::FlowLog
@@ -254,7 +253,6 @@ Resources:
           - REGIONAL
       Name: unicorn-apigw
 
-      
   apiMethod:
     Type: 'AWS::ApiGateway::Method'
     Properties:
@@ -282,13 +280,11 @@ Resources:
       RestApiId: !Ref apiGateway
       StageName: Prod
 
-
 # Ec2
   Ec2KeyPair:
     Type: 'AWS::EC2::KeyPair'
     Properties:
       KeyName: gameday-key
-
 
   EC2Role: 
     Type: "AWS::IAM::InstanceProfile"
@@ -298,7 +294,6 @@ Resources:
         - "WSEC2Role"
 
 # Bastion
-
   BastionSg:
     Type: AWS::EC2::SecurityGroup
     DependsOn: VPC
@@ -309,24 +304,145 @@ Resources:
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
-          CidrIp: 223.122.123.109/32
+          CidrIp: 119.237.240.242/32
 
-  # Ec2Instance: 
-  #   Type: AWS::EC2::Instance
-  #   Properties: 
-  #     ImageId: "ami-0b72821e2f351e396"
-  #     KeyName: !Ref Ec2KeyPair
-  #     InstanceType: t3.micro
-  #     IamInstanceProfile: !Ref EC2Role
-  #     NetworkInterfaces: 
-  #       - AssociatePublicIpAddress: "true"
-  #         DeviceIndex: "0"
-  #         GroupSet: 
-  #           - !Ref BastionSg 
-  #         SubnetId: !Ref PublicSubnet1
+  Ec2Instance: 
+    Type: AWS::EC2::Instance
+    Properties: 
+      ImageId: "ami-0b72821e2f351e396"
+      KeyName: !Ref Ec2KeyPair
+      InstanceType: t3.micro
+      IamInstanceProfile: !Ref EC2Role
+      UserData:
+        Fn::Base64: !Sub |
+           #!/bin/bash
+           yum update -y
+           cd /root
+           aws ssm get-parameter --name /ec2/keypair/key-0067cec476023d650 --with-decryption --query Parameter.Value --output text > gameday-key.pem
+           chmod 400 ./gameday-key.pem
+      NetworkInterfaces: 
+        - AssociatePublicIpAddress: "true"
+          DeviceIndex: "0"
+          GroupSet: 
+            - !Ref BastionSg 
+          SubnetId: !Ref PublicSubnet1
+      Tags:
+        - Key: Name
+          Value: bastion
+
+# ALB 
+  # AlbLoggingS3Bucket:
+  #   Type: AWS::S3::Bucket
+  #   Properties:
+  #     BucketName: gameday-alblog-608671652196
+  #     AccessControl: PublicRead
+  #     PublicAccessBlockConfiguration:
+  #       BlockPublicAcls: false
+  #       BlockPublicPolicy: false
+  #       IgnorePublicAcls: false
+  #       RestrictPublicBuckets: false
+        
+  ELBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ELB Security Group
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Scheme: internet-facing
+      Subnets: 
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      SecurityGroups:
+        - !GetAtt ELBSecurityGroup.GroupId
+      # LoadBalancerAttributes:
+      #   - Key: access_logs.s3.enabled
+      #     Value: 'true'
+      #   - Key: access_logs.s3.bucket
+      #     Value: !Ref AlbLoggingS3Bucket
+      #   - Key: access_logs.s3.prefix
+      #     Value: 'my-alb-logs'
+
+  EC2TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 15
+      HealthyThresholdCount: 5
+      Matcher:
+        HttpCode: '200'
+      Name: EC2TargetGroup
+      Port: 80
+      Protocol: HTTP
+      TargetGroupAttributes:
+      - Key: deregistration_delay.timeout_seconds
+        Value: '20'
+      UnhealthyThresholdCount: 3
+      VpcId: !Ref VPC
+
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref EC2TargetGroup
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+ 
+# CloudFront 
+  MyCustomCachePolicy:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        Name: MyCustomCachePolicyForSpecificQueryString
+        Comment: Cache policy that includes the specific query string parameter
+        DefaultTTL: 86400
+        MaxTTL: 31536000
+        MinTTL: 1
+        ParametersInCacheKeyAndForwardedToOrigin:
+          CookiesConfig:
+            CookieBehavior: none
+          EnableAcceptEncodingGzip: true
+          EnableAcceptEncodingBrotli: true
+          HeadersConfig:
+            HeaderBehavior: none
+          QueryStringsConfig:
+            QueryStringBehavior: whitelist
+            QueryStrings:
+              - input-SUNhbkhhelVuaWNvem40LTY3NDkSY
+              
+  cloudfrontdistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultCacheBehavior:
+          CachePolicyId: !Ref MyCustomCachePolicy
+          TargetOriginId: ALB
+          ViewerProtocolPolicy: "allow-all"
+        Origins:
+          - DomainName: !GetAtt ApplicationLoadBalancer.DNSName
+            Id: ALB
+            CustomOriginConfig:
+              HTTPPort: 80
+              OriginProtocolPolicy: http-only
 
 
-# Application ec2
+
+
+
+
+
+# Application EC2
   ApplicationSg:
     Type: AWS::EC2::SecurityGroup
     DependsOn: VPC
@@ -337,7 +453,15 @@ Resources:
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
-          CidrIp: 0.0.0.0/0
+          CidrIp: 10.0.0.0/16
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 10.0.0.0/16
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 10.0.0.0/16
 
   applicationLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
@@ -347,6 +471,11 @@ Resources:
         ImageId: "ami-0b72821e2f351e396"
         KeyName: !Ref Ec2KeyPair
         InstanceType: t3.micro
+        TagSpecifications:
+          - ResourceType: "instance"
+            Tags:
+            - Key: "Name"
+              Value: "Application"
         UserData:
           Fn::Base64: !Sub |
              #!/bin/bash
@@ -356,14 +485,14 @@ Resources:
              wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
              sudo chmod 700 ./ws-ec2-pipeline-server
              sudo ./ws-ec2-pipeline-server
-             
+
         IamInstanceProfile:
           Arn: !GetAtt EC2Role.Arn
         NetworkInterfaces: 
           - AssociatePublicIpAddress: "true"
             DeviceIndex: "0"
             Groups: 
-              - !Ref BastionSg
+              # - !Ref BastionSg
               - !Ref ApplicationSg
 
   applicationAsg:
@@ -372,11 +501,13 @@ Resources:
       LaunchTemplate:
         LaunchTemplateId: !Ref applicationLaunchTemplate
         Version: !GetAtt applicationLaunchTemplate.LatestVersionNumber
-      MaxSize: '0'
-      MinSize: '0'
+      MaxSize: '5'
+      MinSize: '1'
+      TargetGroupARNs:
+        - !Ref EC2TargetGroup
       VPCZoneIdentifier:   
-        - !Ref PublicSubnet1
-        - !Ref PublicSubnet2
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
       MetricsCollection: 
         - Granularity: 1Minute
           Metrics: 
@@ -384,72 +515,74 @@ Resources:
             - GroupMaxSize
 
 # DocumentDB
-
-  # SecretsManagerVPCEndpoint:
-  #   Type: AWS::EC2::VPCEndpoint
-  #   Properties:
-  #     SubnetIds:
-  #       - !Ref PrivateSubnet1
-  #       - !Ref PrivateSubnet2
-  #     SecurityGroupIds:
-  #       - !GetAtt VPC.DefaultSecurityGroup
-  #     VpcEndpointType: Interface
-  #     ServiceName: !Sub com.amazonaws.us-east-1.secretsmanager
-  #     PrivateDnsEnabled: true
-  #     VpcId: !Ref VPC
-
-
-  # DatabaseSg:
-  #   Type: AWS::EC2::SecurityGroup
-  #   DependsOn: VPC
-  #   Properties:
-  #     GroupDescription: SG to test ping
-  #     VpcId: !Ref VPC
-  #     SecurityGroupIngress:
-  #       - IpProtocol: tcp
-  #         FromPort: 27017
-  #         ToPort: 27017
-  #         CidrIp: 10.0.0.0/16
+  SecretsManagerVPCEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      SecurityGroupIds:
+        - !Ref ApplicationSg
+        - !Ref BastionSg
+      VpcEndpointType: Interface
+      ServiceName: !Sub com.amazonaws.us-east-1.secretsmanager
+      PrivateDnsEnabled: true
+      VpcId: !Ref VPC
 
 
-  # DocDBClusterRotationSecret:
-  #   Type: AWS::SecretsManager::Secret
-  #   Properties:
-  #     GenerateSecretString:
-  #       SecretStringTemplate: '{"username": "someadmin","ssl": true, "password": "passw0rd}'
-  #     Tags:
-  #       - Key: AppName
-  #         Value: Unicorn
+  DatabaseSg:
+    Type: AWS::EC2::SecurityGroup
+    DependsOn: VPC
+    Properties:
+      GroupDescription: SG to test ping
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 27017
+          ToPort: 27017
+          CidrIp: 10.0.0.0/16
 
-  # DocDBCluster:
-  #   Type: AWS::DocDB::DBCluster
-  #   Properties:
-  #     DBSubnetGroupName: !Ref DBSubnetGroup
-  #     MasterUsername: !Sub '{{resolve:secretsmanager:${DocDBClusterRotationSecret}::username}}'
-  #     MasterUserPassword: !Sub '{{resolve:secretsmanager:${DocDBClusterRotationSecret}::password}}'
-  #     VpcSecurityGroupIds:
-  #       - !Ref DatabaseSg
+  DocDBClusterRotationSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "someadmin","ssl": true}'
+        GenerateStringKey: password
+        PasswordLength: 16
+        ExcludePunctuation: true    
+      Tags:
+        - Key: AppName
+          Value: Unicorn
 
-  # DocDBInstance:
-  #   Type: AWS::DocDB::DBInstance
-  #   Properties:
-  #     DBClusterIdentifier: !Ref DocDBCluster
-  #     DBInstanceClass: db.t3.medium
+  DocDBCluster:
+    Type: AWS::DocDB::DBCluster
+    Properties:
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      MasterUsername: !Sub '{{resolve:secretsmanager:${DocDBClusterRotationSecret}::username}}'
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:${DocDBClusterRotationSecret}::password}}'
+      VpcSecurityGroupIds:
+        - !Ref DatabaseSg
 
-  # DBSubnetGroup:
-  #   Type: AWS::DocDB::DBSubnetGroup
-  #   Properties:
-  #     DBSubnetGroupDescription: 'private-subnet'
-  #     SubnetIds:
-  #       - !Ref PrivateSubnet1
-  #       - !Ref PrivateSubnet2
+  DocDBInstance:
+    Type: AWS::DocDB::DBInstance
+    Properties:
+      DBClusterIdentifier: !Ref DocDBCluster
+      DBInstanceClass: db.t3.medium
 
-  # SecretDocDBClusterAttachment:
-  #   Type: AWS::SecretsManager::SecretTargetAttachment
-  #   Properties:
-  #     SecretId: !Ref DocDBClusterRotationSecret
-  #     TargetId: !Ref DocDBCluster
-  #     TargetType: AWS::DocDB::DBCluster
+  DBSubnetGroup:
+    Type: AWS::DocDB::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: 'private-subnet'
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+
+  SecretDocDBClusterAttachment:
+    Type: AWS::SecretsManager::SecretTargetAttachment
+    Properties:
+      SecretId: !Ref DocDBClusterRotationSecret
+      TargetId: !Ref DocDBCluster
+      TargetType: AWS::DocDB::DBCluster
 
   # MySecretRotationSchedule:
   #   Type: AWS::SecretsManager::RotationSchedule
@@ -467,8 +600,6 @@ Resources:
   #     RotationRules:
   #       Duration: 2h
   #       ScheduleExpression: cron(0 8 1 * ? *)
-
-
 
 # App Config
   Application:
@@ -509,7 +640,7 @@ Resources:
       Description: ' configuration prod value'
       Content: !Sub |
         {
-        "DBSeretARN" : "arn:aws:secretsmanager:us-east-1:608671652196:secret:DocDBClusterRotationSecret-5EPO4dy7bqaX-nBowFE",
+        "DBSeretARN" : "arn:aws:secretsmanager:us-east-1:608671652196:secret:DocDBClusterRotationSecret-1DpxLym0wK50-TQ8oTd",
         "MongoDbDatabase" : "unicorndb",
         "MongoDbCollection" : "unicorncollection",
         "MongoDbCAFilePath" : "./global-bundle.pem",
@@ -575,3 +706,7 @@ Outputs:
   LambdaFunction:
     Description: LambdaFunction
     Value: !Ref lambdaFunction
+
+  SecretManager:
+    Description: SecretManager
+    Value: !Ref DocDBClusterRotationSecret

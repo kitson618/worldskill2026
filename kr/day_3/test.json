@@ -1,0 +1,43 @@
+{
+	"Version": "2012-10-17",
+
+	"Id": "Policy1647896105908",
+
+	"Statement": [
+		{
+			"Sid": "Stmt1647895737338",
+
+			"Effect": "Allow",
+
+			"Principal": "*",
+
+			"Action": "s3:*",
+
+			"Resource": "arn:aws:s3:::*",
+
+			"Condition": {
+				"ArnEquals": {
+					"aws:PrincipalArn": "arn:aws:iam::AccountID:role/IAMRoleS3Full"
+				}
+			}
+		},
+
+		{
+			"Sid": "Stmt1647896101495",
+
+			"Effect": "Allow",
+
+			"Principal": "*",
+
+			"Action": "s3:*",
+
+			"Resource": "arn:aws:s3:::jam-ACCOUNTID/backend/*",
+
+			"Condition": {
+				"ArnEquals": {
+					"aws:PrincipalArn": "arn:aws:iam::AccountID:role/IAMRoleS3Read"
+				}
+			}
+		}
+	]
+}

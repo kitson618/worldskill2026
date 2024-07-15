@@ -1,0 +1,5 @@
+# cloud raiser
+http://cloudraiser-dev3-292608829.us-east-1.elb.amazonaws.com/login
+
+# login information
+202406180930,lab_user4,73914494,HK-TEAM

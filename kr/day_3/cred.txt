@@ -1,0 +1,18 @@
+{
+  "TableName": "new-ddb",
+  "EmployeeId": "3287",
+  "Employee Favorite sport": "Golf",
+  "Employee Favorite movie": "Assassins"
+}
+
+
+{
+  "Backup plan Id": "882b4b95-7d4e-4de6-8ac9-bc40e54aec62", 
+  "Table Name": "new-ddb"
+}
+
+x-api-auth
+ https://jam-app-userpool-ex1-211125490703.auth.us-east-1.amazoncognito.com/login?client_id=3p4ob9f0o7kckkqmgg8stcshsv&response_type=token&redirect_uri=http://localhost/
+
+
+

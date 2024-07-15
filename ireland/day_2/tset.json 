@@ -1,0 +1,2 @@
+"arn:aws:iam::851725448671:role/service-role/pyei-challenge-codebuild-service-role",
+"arn:aws:codebuild:us-east-1:851725448671:project/pyei-challenge-build"

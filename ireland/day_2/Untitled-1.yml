@@ -1,0 +1,17 @@
+---
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: jam-cluster
+  region: us-east-1
+  version: "1.29"
+
+managedNodeGroups:
+- name: nodegroup
+  desiredCapacity: 3
+  instanceType: t2.small
+  ssh:
+    enableSsm: true
+  
+availabilityZones: ['us-east-1a', 'us-east-1b']

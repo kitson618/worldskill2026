@@ -1,0 +1,30 @@
+{
+	"efs_path": "/mnt/efs",
+	"db_config": {
+		"host": "cloudrasier-db.cpimg4ggyiw0.us-east-1.rds.amazonaws.com",
+		"user": "cloudrasier",
+		"password": "cloudrasier",
+		"database": "cloudraiser"
+	},
+	"documentdb_config": {
+		"host": "cloudrasier.cluster-cpimg4ggyiw0.us-east-1.docdb.amazonaws.com",
+		"name": "cloudrasier",
+		"password": "cloudrasier",
+		"port": 27017
+	},
+	"dynamodb_config": {
+		"table": "cloudrasier"
+	},
+	"redis_config": {
+		"host": "cloudrasier-jphkla.serverless.use1.cache.amazonaws.com",
+		"port": 6379
+	},
+	"s3_config": {
+		"bucket_name": "cloudrasier-730335363981"
+	},
+	"api_gateway_config": {
+		"api_gateway_url": "cloudrasier",
+		"api_key": "cloudrasier"
+	}
+}
+

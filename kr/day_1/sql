@@ -1,0 +1,22 @@
+Create table customer(
+	id VARCHAR(255),
+	name VARCHAR(255),
+	gender VARCHAR(255)
+);
+
+Create table product(
+	id VARCHAR(255),
+	name VARCHAR(255),
+	category VARCHAR(255)
+);
+
+	{
+			"Sid": "Stmt1405592139000",
+			"Effect": "Allow",
+			"Principal": "*",
+			"Action": "s3:GetObject",
+			"Resource": [
+				"arn:aws:s3:::ap-wsi-static-2234/*",
+				"arn:aws:s3:::ap-wsi-static-2234"
+			]
+		}

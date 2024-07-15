@@ -1,0 +1,1 @@
+aws ssm get-parameter --name /ec2/keypair/key-0067cec476023d650 --with-decryption --query Parameter.Value --output text > gamday-key.pem
