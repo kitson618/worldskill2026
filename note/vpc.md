@@ -141,3 +141,51 @@ aws iam put-role-policy --role-name VPCFlowLogRole --policy-name VPCFlowLogPolic
 ```bash
 aws ec2 create-flow-logs --resource-type VPC --resource-ids $VPC_ID --traffic-type ALL --log-group-name VPCFlowLogs --deliver-logs-permission-arn arn:aws:iam::$ACCOUNT_ID:role/VPCFlowLogRole
 ```
+
+
+
+## **S3 VPC Flow Log**
+
+```json
+{
+    "Version": "2012-10-17",
+    "Id": "AWSLogDeliveryWrite20150319",
+    "Statement": [
+        {
+            "Sid": "AWSLogDeliveryWrite",
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "delivery.logs.amazonaws.com"
+            },
+            "Action": "s3:PutObject",
+            "Resource": "arn:aws:s3:::template-logging-608671652196/AWSLogs/aws-account-id=608671652196/*",
+            "Condition": {
+                "StringEquals": {
+                    "aws:SourceAccount": "608671652196",
+                    "s3:x-amz-acl": "bucket-owner-full-control"
+                },
+                "ArnLike": {
+                    "aws:SourceArn": "arn:aws:logs:us-east-1:608671652196:*"
+                }
+            }
+        },
+        {
+            "Sid": "AWSLogDeliveryAclCheck",
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "delivery.logs.amazonaws.com"
+            },
+            "Action": "s3:GetBucketAcl",
+            "Resource": "arn:aws:s3:::template-logging-608671652196",
+            "Condition": {
+                "StringEquals": {
+                    "aws:SourceAccount": "608671652196"
+                },
+                "ArnLike": {
+                    "aws:SourceArn": "arn:aws:logs:us-east-1:608671652196:*"
+                }
+            }
+        }
+    ]
+}
+```

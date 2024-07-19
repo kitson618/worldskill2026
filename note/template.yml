@@ -4,7 +4,7 @@ Parameters:
   EnvironmentName:
     Description: An environment name that is prefixed to resource names
     Type: String
-    Default: Template
+    Default: template
 
   VpcCIDR:
     Description: Please enter the IP range (CIDR notation) for this VPC
@@ -44,6 +44,9 @@ Parameters:
   apiGatewayHTTPMethod:
     Type: String
     Default: GET
+
+# AWS::AccountId 
+# AWS::Region
 
 Resources: 
 
@@ -227,6 +230,88 @@ Resources:
       RouteTableId: !Ref IsolatedRouteTable
       SubnetId: !Ref IsolatedSubnet2
 
+######### S3 Bucket ###########
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties: 
+      AccessControl: Private
+      BucketName: !Sub ${EnvironmentName}-logging-${AWS::AccountId}
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption: 
+        ServerSideEncryptionConfiguration: 
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+
+######### VPC FlowLog ###########
+  S3Flowlog:
+    DependsOn: S3Bucket
+    Type: AWS::EC2::FlowLog
+    Properties:
+      LogDestination: !GetAtt S3Bucket.Arn
+      LogDestinationType: s3
+      LogFormat: ${version} ${vpc-id} ${subnet-id} ${instance-id} ${srcaddr} ${dstaddr} ${srcport} ${dstport} ${protocol} ${tcp-flags} ${type} ${pkt-srcaddr} ${pkt-dstaddr}
+      MaxAggregationInterval: 60
+      DestinationOptions:
+        FileFormat: parquet
+        HiveCompatiblePartitions: true
+        PerHourPartition: true
+      ResourceId: !Ref VPC
+      ResourceType: VPC
+      TrafficType: ALL
+      Tags:
+        - Key: Name
+          Value: VPC-flowlog-s3
+        - Key: Purpose
+          Value: AllTraffic
+
+  CloudWatchVpcLogRole: 
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: cloudwatch-vpc-log-role
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - Effect: "Allow"
+            Principal: 
+              Service: 
+                - "vpc-flow-logs.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+
+  CloudWatchVpcLogPolicy: 
+    Type: "AWS::IAM::RolePolicy"
+    Properties: 
+      PolicyName: "cloudwatch-vpc-log-policy"
+      PolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - Effect: "Allow"
+            Action:
+              - "logs:CreateLogGroup"
+              - "logs:CreateLogStream"
+              - "logs:PutLogEvents"
+              - "logs:DescribeLogGroups"
+              - "logs:DescribeLogStreams"
+              - "s3:PutObject"
+              - "s3:GetBucketLocation"
+            Resource: "arn:aws:logs:*:*:log-group:VPCFlowLogs:*"
+      RoleName: !Ref CloudWatchVpcLogRole
+
+  CloudWatchFlow:
+    Type: AWS::EC2::FlowLog
+    Properties:
+      DeliverLogsPermissionArn: !GetAtt CloudWatchVpcLogRole.Arn
+      LogGroupName: FlowLogsGroup
+      ResourceId: !Ref VPC
+      ResourceType: VPC
+      TrafficType: REJECT
+      Tags:
+        - Key: Name
+          Value: VPC-flowlog-cloudwatch
+        - Key: Purpose
+          Value: RejectTraffic
+
 ######### Lambda Function ##########
   LambdaFunction:
     Type: AWS::Lambda::Function
@@ -270,7 +355,7 @@ Resources:
       Integration:
         Type: AWS
         IntegrationHttpMethod: GET
-        Credentials: !Sub arn:aws:iam::${AWS::AccountId}:role/MyLambdaExecutionRole"
+        # Credentials: !Sub arn:aws:iam::${AWS::AccountId}:role/MyLambdaExecutionRole
         PassthroughBehavior: WHEN_NO_TEMPLATES
         IntegrationResponses:
           - StatusCode: "200"
@@ -284,7 +369,82 @@ Resources:
       RestApiId: !Ref ApiGateway
       StageName: Prod
 
+########### ALB ############
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALB Security Group
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
 
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Scheme: internet-facing
+      Subnets: 
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      SecurityGroups:
+        - !GetAtt AlbSecurityGroup.GroupId
+
+  EC2TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 15
+      HealthyThresholdCount: 5
+      Matcher:
+        HttpCode: '200'
+      Name: EC2TargetGroup
+      Port: 80
+      Protocol: HTTP
+      TargetGroupAttributes:
+      - Key: deregistration_delay.timeout_seconds
+        Value: '20'
+      UnhealthyThresholdCount: 3
+      VpcId: !Ref VPC
+
+  AlbListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref EC2TargetGroup
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+  AlbLogS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties: 
+      AccessControl: Private
+      BucketName: !Sub ${EnvironmentName}-alb-logging-${AWS::AccountId}
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption: 
+        ServerSideEncryptionConfiguration: 
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+ 
+  AlbLogS3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref AlbLogS3Bucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - 's3:PutObject'
+            Effect: Allow
+            Resource: 
+              - !GetAtt AlbLogS3Bucket.Arn
+              - !Sub  ${AlbLogS3Bucket.Arn}/*
+            Principal: 'arn:aws:iam::127311923021:root'
 
 Outputs:
   VPC:
