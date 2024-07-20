@@ -1,5 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: Template CloudFormation
+# MARK: Parameters
 Parameters: 
   EnvironmentName:
     Description: An environment name that is prefixed to resource names
@@ -41,16 +42,19 @@ Parameters:
     Type: String
     Default: 10.0.31.0/24
 
-  apiGatewayHTTPMethod:
+  ApiGatewayHTTPMethod:
     Type: String
     Default: GET
 
+  Ec2RoleName:
+    Type: String
+    Default: WSEC2Role
 # AWS::AccountId 
 # AWS::Region
 
 Resources: 
 
-############ VPC Network ############
+# MARK: VPC Network
   VPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -61,7 +65,7 @@ Resources:
         - Key: Name
           Value: !Ref EnvironmentName
 
-############ Public Subnet ###############
+# MARK: Public Subnet
   InternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
@@ -109,35 +113,51 @@ Resources:
       AllocationId: !GetAtt NatGatewayEIP.AllocationId
       SubnetId: !Ref PublicSubnet1
 
-  PublicRouteTable:
+  PublicRouteTable1:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Public Routes
+          Value: !Sub ${EnvironmentName} Public Routes (AZ1)
 
-  DefaultPublicRoute:
+  DefaultPublicRoute1:
     Type: AWS::EC2::Route
     DependsOn: InternetGatewayAttachment
     Properties:
-      RouteTableId: !Ref PublicRouteTable
+      RouteTableId: !Ref PublicRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Public Routes (AZ2)
+
+  DefaultPublicRoute2:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable2
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref InternetGateway
 
   PublicSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref PublicRouteTable
+      RouteTableId: !Ref PublicRouteTable1
       SubnetId: !Ref PublicSubnet1
 
   PublicSubnet2RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref PublicRouteTable
+      RouteTableId: !Ref PublicRouteTable2
       SubnetId: !Ref PublicSubnet2
 
-############ Private Subnet ###############
+# MARK: Private Subnet
   PrivateSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
@@ -160,7 +180,7 @@ Resources:
         - Key: Name
           Value: !Sub ${EnvironmentName} Private Subnet (AZ2)
 
-  PrivateRouteTable:
+  PrivateRouteTable1:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VPC
@@ -168,26 +188,41 @@ Resources:
         - Key: Name
           Value: !Sub ${EnvironmentName} Private Routes (AZ1)
 
-  DefaultPrivateRoute:
+  DefaultPrivateRoute1:
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId: !Ref PrivateRouteTable
+      RouteTableId: !Ref PrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
+
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Private Routes (AZ2)
+
+  DefaultPrivateRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
       DestinationCidrBlock: 0.0.0.0/0
       NatGatewayId: !Ref NatGateway
 
   PrivateSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref PrivateRouteTable
+      RouteTableId: !Ref PrivateRouteTable1
       SubnetId: !Ref PrivateSubnet1
 
   PrivateSubnet2RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref PrivateRouteTable
+      RouteTableId: !Ref PrivateRouteTable2
       SubnetId: !Ref PrivateSubnet2
 
-############ Isolated Subnet ###############
+# MARK: Isolated Subnet
   IsolatedSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
@@ -210,7 +245,7 @@ Resources:
         - Key: Name
           Value: !Sub ${EnvironmentName} Isolated Subnet (AZ2)
 
-  IsolatedRouteTable:
+  IsolatedRouteTable1:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VPC
@@ -218,19 +253,27 @@ Resources:
         - Key: Name
           Value: !Sub ${EnvironmentName} Isolated Routes (AZ1)
 
+  IsolatedRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Isolated Routes (AZ2)
+
   IsolatedSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref IsolatedRouteTable
+      RouteTableId: !Ref IsolatedRouteTable1
       SubnetId: !Ref IsolatedSubnet1
 
   IsolatedSubnet2RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      RouteTableId: !Ref IsolatedRouteTable
+      RouteTableId: !Ref IsolatedRouteTable2
       SubnetId: !Ref IsolatedSubnet2
 
-######### S3 Bucket ###########
+# MARK: S3 Bucket
   S3Bucket:
     Type: AWS::S3::Bucket
     Properties: 
@@ -243,7 +286,7 @@ Resources:
         - ServerSideEncryptionByDefault:
             SSEAlgorithm: AES256
 
-######### VPC FlowLog ###########
+# MARK: VPC FlowLog
   S3Flowlog:
     DependsOn: S3Bucket
     Type: AWS::EC2::FlowLog
@@ -312,7 +355,7 @@ Resources:
         - Key: Purpose
           Value: RejectTraffic
 
-######### Lambda Function ##########
+# MARK: Lambda Function
   LambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -331,7 +374,7 @@ Resources:
       TracingConfig:
         Mode: Active
 
-######### API REST API ###########
+# MARK: API REST API
   ApiGateway:
     Type: AWS::ApiGateway::RestApi
     Properties:
@@ -346,7 +389,7 @@ Resources:
     Properties:
       RestApiId: !Ref ApiGateway
       ResourceId: !GetAtt ApiGateway.RootResourceId
-      HttpMethod: GET
+      HttpMethod: !Ref ApiGatewayHTTPMethod
       MethodResponses:
         - StatusCode: '200'
           ResponseModels:
@@ -354,7 +397,7 @@ Resources:
       AuthorizationType: NONE
       Integration:
         Type: AWS
-        IntegrationHttpMethod: GET
+        IntegrationHttpMethod: !Ref ApiGatewayHTTPMethod
         # Credentials: !Sub arn:aws:iam::${AWS::AccountId}:role/MyLambdaExecutionRole
         PassthroughBehavior: WHEN_NO_TEMPLATES
         IntegrationResponses:
@@ -369,7 +412,36 @@ Resources:
       RestApiId: !Ref ApiGateway
       StageName: Prod
 
-########### ALB ############
+# MARK: ALB LOG Bucket
+  AlbLogS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties: 
+      AccessControl: Private
+      BucketName: !Sub ${EnvironmentName}-alb-logging-${AWS::AccountId}
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption: 
+        ServerSideEncryptionConfiguration: 
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+ 
+  AlbLogS3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref AlbLogS3Bucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action:
+              - 's3:PutObject'
+            Effect: Allow
+            Resource: 
+              - !Sub "arn:aws:s3:::${AlbLogS3Bucket}"
+              - !Sub "arn:aws:s3:::${AlbLogS3Bucket}/*"
+            Principal: 
+              AWS: 'arn:aws:iam::127311923021:root'
+
+# MARK: ALB
   AlbSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -390,6 +462,13 @@ Resources:
         - !Ref PublicSubnet2
       SecurityGroups:
         - !GetAtt AlbSecurityGroup.GroupId
+      LoadBalancerAttributes:
+        - Key: access_logs.s3.enabled
+          Value: 'true'
+        - Key: access_logs.s3.bucket
+          Value: !Ref AlbLogS3Bucket
+        - Key: access_logs.s3.prefix
+          Value: 'alb-logs'
 
   EC2TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
@@ -419,33 +498,129 @@ Resources:
       Port: 80
       Protocol: HTTP
 
-  AlbLogS3Bucket:
-    Type: AWS::S3::Bucket
-    Properties: 
-      AccessControl: Private
-      BucketName: !Sub ${EnvironmentName}-alb-logging-${AWS::AccountId}
-      VersioningConfiguration:
-        Status: Enabled
-      BucketEncryption: 
-        ServerSideEncryptionConfiguration: 
-        - ServerSideEncryptionByDefault:
-            SSEAlgorithm: AES256
- 
-  AlbLogS3BucketPolicy:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      Bucket: !Ref AlbLogS3Bucket
-      PolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Action:
-              - 's3:PutObject'
-            Effect: Allow
-            Resource: 
-              - !GetAtt AlbLogS3Bucket.Arn
-              - !Sub  ${AlbLogS3Bucket.Arn}/*
-            Principal: 'arn:aws:iam::127311923021:root'
 
+# MARK: Ec2
+  Ec2KeyPair:
+    Type: 'AWS::EC2::KeyPair'
+    Properties:
+      KeyName: !Sub ${EnvironmentName}-ec2-keypair
+
+  EC2Role: 
+    Type: "AWS::IAM::InstanceProfile"
+    Properties: 
+      Path: "/"
+      Roles: 
+        - !Ref Ec2RoleName
+
+
+# MARK: Bastion
+  # BastionSg:
+  #   Type: AWS::EC2::SecurityGroup
+  #   DependsOn: VPC
+  #   Properties:
+  #     GroupDescription: SG to test ping
+  #     VpcId: !Ref VPC
+  #     SecurityGroupIngress:
+  #       - IpProtocol: tcp
+  #         FromPort: 22
+  #         ToPort: 22
+  #         CidrIp: 119.237.240.242/32
+
+  # Ec2Instance: 
+  #   Type: AWS::EC2::Instance
+  #   Properties: 
+  #     ImageId: "ami-0b72821e2f351e396"
+  #     KeyName: !Ref Ec2KeyPair
+  #     InstanceType: t3.micro
+  #     IamInstanceProfile: !Ref EC2Role
+  #     UserData:
+  #       Fn::Base64: !Sub |
+  #          #!/bin/bash
+  #          yum update -y
+  #          cd /root
+  #          aws ssm get-parameter --name /ec2/keypair/key-0067cec476023d650 --with-decryption --query Parameter.Value --output text > gameday-key.pem
+  #          chmod 400 ./gameday-key.pem
+  #     NetworkInterfaces: 
+  #       - AssociatePublicIpAddress: "true"
+  #         DeviceIndex: "0"
+  #         GroupSet: 
+  #           - !Ref BastionSg 
+  #         SubnetId: !Ref PublicSubnet1
+  #     Tags:
+  #       - Key: Name
+  #         Value: bastion
+
+# MARK: AutoScaling Group
+  ApplicationSg:
+    Type: AWS::EC2::SecurityGroup
+    DependsOn: VPC
+    Properties:
+      GroupDescription: applciation
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: !Ref VpcCIDR
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref VpcCIDR
+        # - IpProtocol: tcp
+        #   FromPort: 22
+        #   ToPort: 22
+        #   CidrIp: !Ref VpcCIDR
+
+  applicationLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties: 
+      LaunchTemplateName: applicationLaunchTemplate
+      LaunchTemplateData:
+        ImageId: "ami-0b72821e2f351e396"
+        KeyName: !Ref Ec2KeyPair
+        InstanceType: t3.micro
+        TagSpecifications:
+          - ResourceType: "instance"
+            Tags:
+            - Key: "Name"
+              Value: "Application"
+        UserData:
+          Fn::Base64: !Sub |
+             #!/bin/bash
+             yum update -y
+             cd /root
+             wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+
+        IamInstanceProfile:
+          Arn: !GetAtt EC2Role.Arn
+        NetworkInterfaces: 
+          - AssociatePublicIpAddress: "true"
+            DeviceIndex: "0"
+            Groups: 
+              # - !Ref BastionSg
+              - !Ref ApplicationSg
+
+  applicationAsg:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref applicationLaunchTemplate
+        Version: !GetAtt applicationLaunchTemplate.LatestVersionNumber
+      MaxSize: '0'
+      MinSize: '0'
+      TargetGroupARNs:
+        - !Ref EC2TargetGroup
+      VPCZoneIdentifier:   
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      MetricsCollection: 
+        - Granularity: 1Minute
+          Metrics: 
+            - GroupMinSize
+            - GroupMaxSize
+
+
+# MARK: Output
 Outputs:
   VPC:
     Description: A reference to the created VPC
@@ -482,4 +657,8 @@ Outputs:
   ApiGatewayUrl:
     Description: URL of the API Gateway
     Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+  
+  AlbEnddPoint:
+    Description: URL of the ALB
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
   
