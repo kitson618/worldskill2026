@@ -363,62 +363,110 @@ Resources:
 #         - Key: Purpose
 #           Value: RejectTraffic
 
-# # MARK: Lambda Function
-#   LambdaFunction:
-#     Type: AWS::Lambda::Function
-#     Properties:
-#       Handler: index.handler
-#       Role: !Sub arn:aws:iam::${AWS::AccountId}:role/MyLambdaExecutionRole
-#       Runtime: nodejs18.x
-#       Code:
-#         ZipFile: |
-#           exports.handler = async function(event, context) {
-#             return {"account_id": process.env.AWS_ACCOUNT_ID};
-#           };
-#       Environment:
-#         Variables:
-#           AWS_ACCOUNT_ID: !Ref AWS::AccountId
-#       Timeout: 5
-#       TracingConfig:
-#         Mode: Active
+# MARK: Applcation Bucket 
+  ApplcationBucket:
+    Type: AWS::S3::Bucket
+    Properties: 
+      AccessControl: Private
+      BucketName: !Sub ${EnvironmentName}-application-${AWS::AccountId}
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption: 
+        ServerSideEncryptionConfiguration: 
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
 
-# # MARK: API REST API
-#   ApiGateway:
-#     Type: AWS::ApiGateway::RestApi
-#     Properties:
-#       Description: !Ref EnvironmentName
-#       EndpointConfiguration:
-#         Types:
-#           - REGIONAL
-#       Name: !Ref EnvironmentName
+# MARK: Lambda Function
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/MyLambdaExecutionRole
+      Runtime: nodejs18.x
+      Code:
+        ZipFile: |
+          exports.handler = async function(event, context) {
+            return {"account_id": process.env.AWS_ACCOUNT_ID};
+          };
+      Environment:
+        Variables:
+          AWS_ACCOUNT_ID: !Ref AWS::AccountId
+      Timeout: 5
+      TracingConfig:
+        Mode: Active
 
-#   ApiMethod:
-#     Type: 'AWS::ApiGateway::Method'
-#     Properties:
-#       RestApiId: !Ref ApiGateway
-#       ResourceId: !GetAtt ApiGateway.RootResourceId
-#       HttpMethod: !Ref ApiGatewayHTTPMethod
-#       MethodResponses:
-#         - StatusCode: '200'
-#           ResponseModels:
-#             application/json: Empty
-#       AuthorizationType: NONE
-#       Integration:
-#         Type: AWS
-#         IntegrationHttpMethod: !Ref ApiGatewayHTTPMethod
-#         # Credentials: !Sub arn:aws:iam::${AWS::AccountId}:role/MyLambdaExecutionRole
-#         PassthroughBehavior: WHEN_NO_TEMPLATES
-#         IntegrationResponses:
-#           - StatusCode: "200"
-#         Uri: !Sub >-
-#           arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunction.Arn}/invocations
+# MARK: API REST API
+  ApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Description: !Ref EnvironmentName
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      Name: !Ref EnvironmentName
 
-#   Deployment:
-#     DependsOn: ApiMethod
-#     Type: 'AWS::ApiGateway::Deployment'
-#     Properties:
-#       RestApiId: !Ref ApiGateway
-#       StageName: Prod
+  ApiMethod:
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !GetAtt ApiGateway.RootResourceId
+      HttpMethod: !Ref ApiGatewayHTTPMethod
+      MethodResponses:
+        - StatusCode: '200'
+          ResponseModels:
+            application/json: Empty
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS
+        IntegrationHttpMethod: !Ref ApiGatewayHTTPMethod
+        # Credentials: !Sub arn:aws:iam::${AWS::AccountId}:role/MyLambdaExecutionRole
+        PassthroughBehavior: WHEN_NO_TEMPLATES
+        IntegrationResponses:
+          - StatusCode: "200"
+        Uri: !Sub >-
+          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunction.Arn}/invocations
+
+  Deployment:
+    DependsOn: ApiMethod
+    Type: 'AWS::ApiGateway::Deployment'
+    Properties:
+      RestApiId: !Ref ApiGateway
+      StageName: Prod
+      
+  ApiKey:
+    Type: 'AWS::ApiGateway::ApiKey'
+    DependsOn:
+      - Deployment
+    Properties:
+      Name: !Sub ${EnvironmentName}-apikey
+      Description: !Sub ${EnvironmentName}-apikey
+      Enabled: true
+      StageKeys:
+        - RestApiId: !Ref ApiGateway
+          StageName: Prod
+
+  ApiUsagePlan:
+    Type: "AWS::ApiGateway::UsagePlan"
+    Properties:
+      ApiStages: 
+      - ApiId: !Ref ApiGateway
+        Stage: Prod     
+      Description: "Api Usage Plan"
+      Quota:
+        Limit: 2000
+        Period: MONTH
+      Throttle:
+        BurstLimit: 10
+        RateLimit: 10
+      UsagePlanName: api-userplan
+
+  ApiUsagePlanKey:
+    Type: "AWS::ApiGateway::UsagePlanKey"
+    Properties:
+      KeyId: !Ref ApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref ApiUsagePlan
+
 
 # # MARK: ALB LOG Bucket
 #   AlbLogS3Bucket:
@@ -534,7 +582,7 @@ Resources:
           ToPort: 22
           CidrIp: 119.237.240.242/32
 
-  Ec2Instance: 
+  BastionHostInstance: 
     Type: AWS::EC2::Instance
     Properties: 
       ImageId: "ami-0b72821e2f351e396"
@@ -553,6 +601,11 @@ Resources:
           usermod -a -G docker ec2-user
           curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
           chmod +x /usr/local/bin/docker-compose
+          wget https://dev.mysql.com/get/mysql80-community-release-el9-1.noarch.rpm
+          dnf install mysql80-community-release-el9-1.noarch.rpm -y
+          rpm --import https://repo.mysql.com/RPM-GPG-KEY-mysql-2023
+          dnf install mysql-community-client -y
+          rm -f mysql80-community-release-el9-1.noarch.rpm
           yum install libxcrypt-compat -y
       NetworkInterfaces: 
         - AssociatePublicIpAddress: "true"
@@ -758,34 +811,34 @@ Resources:
   #       PredefinedMetricSpecification:
   #         PredefinedMetricType: DynamoDBWriteCapacityUtilization
 
-# # MARK: SecretManager
-#   SecretsManagerVPCEndpoint:
-#     Type: AWS::EC2::VPCEndpoint
-#     Properties:
-#       SubnetIds:
-#         - !Ref PrivateSubnet1
-#         - !Ref PrivateSubnet2
-#         - !Ref IsolatedSubnet1
-#         - !Ref IsolatedSubnet2
-#       SecurityGroupIds:
-#         - !Ref ApplicationSg
-#         - !Ref BastionSg
-#       VpcEndpointType: Interface
-#       ServiceName: !Sub com.amazonaws.${AWS::Region}.secretsmanager
-#       PrivateDnsEnabled: true
-#       VpcId: !Ref VPC
+# MARK: SecretManager
+  SecretsManagerVPCEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        # - !Ref IsolatedSubnet1
+        # - !Ref IsolatedSubnet2
+      SecurityGroupIds:
+        - !Ref ApplicationSg
+        - !Ref BastionSg
+      VpcEndpointType: Interface
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.secretsmanager
+      PrivateDnsEnabled: true
+      VpcId: !Ref VPC
 
-#   DocDBClusterRotationSecret:
-#     Type: AWS::SecretsManager::Secret
-#     Properties:
-#       GenerateSecretString:
-#         SecretStringTemplate: '{"username": "adminuser","ssl": true}'
-#         GenerateStringKey: password
-#         PasswordLength: 16
-#         ExcludePunctuation: true    
-#       Tags:
-#         - Key: AppName
-#           Value: !Ref EnvironmentName
+  DocDBClusterRotationSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "adminuser","ssl": true}'
+        GenerateStringKey: password
+        PasswordLength: 16
+        ExcludePunctuation: true    
+      Tags:
+        - Key: AppName
+          Value: !Ref EnvironmentName
 
 # MySecretRotationSchedule:
 #   Type: AWS::SecretsManager::RotationSchedule
@@ -804,11 +857,48 @@ Resources:
 #       Duration: 2h
 #       ScheduleExpression: cron(0 8 1 * ? *)
 
+
+#MARK: Redis
+  RedisDbSg:
+    Type: AWS::EC2::SecurityGroup
+    DependsOn: VPC
+    Properties:
+      GroupDescription: Redis
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 6379
+          ToPort: 6379
+          CidrIp: !Ref VpcCIDR
+
+  RedisSubnetGroup:
+    Type: AWS::MemoryDB::SubnetGroup
+    Properties:
+      Description: 'isolated-subnet-redis'
+      SubnetGroupName: 'isolated-subnet-redis'
+      SubnetIds:
+        - !Ref IsolatedSubnet1
+        - !Ref IsolatedSubnet2
+
+  Redis:
+    Type: AWS::MemoryDB::Cluster
+    Properties:
+      ACLName: open-access
+      ClusterName: !Sub ${EnvironmentName}-redis
+      NodeType: db.t4g.small
+      SecurityGroupIds:
+        - !Ref RedisDbSg
+      SubnetGroupName: !Ref RedisSubnetGroup
+      Tags:
+        - Key: environment
+          Value: production
+
+
 #MARK: RDS
   RdsDbSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
-      DBSubnetGroupDescription: 'isolated-subnet'
+      DBSubnetGroupDescription: 'isolated-subnet-rds'
       SubnetIds:
         - !Ref IsolatedSubnet1
         - !Ref IsolatedSubnet2
@@ -838,56 +928,56 @@ Resources:
       VPCSecurityGroups:
         - !Ref RdsDbSg      
 
-# # MARK: DocumentDB
-#   DatabaseSg:
-#     Type: AWS::EC2::SecurityGroup
-#     DependsOn: VPC
-#     Properties:
-#       GroupDescription: Connection for application
-#       VpcId: !Ref VPC
-#       SecurityGroupIngress:
-#         - IpProtocol: tcp
-#           FromPort: 27017
-#           ToPort: 27017
-#           CidrIp: !Ref VpcCIDR
+# MARK: DocumentDB
+  DatabaseSg:
+    Type: AWS::EC2::SecurityGroup
+    DependsOn: VPC
+    Properties:
+      GroupDescription: Connection for application
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 27017
+          ToPort: 27017
+          CidrIp: !Ref VpcCIDR
 
-#   DBPrivateSubnetGroup:
-#     Type: AWS::DocDB::DBSubnetGroup
-#     Properties:
-#       DBSubnetGroupDescription: 'private-subnet'
-#       SubnetIds:
-#         - !Ref PrivateSubnet1
-#         - !Ref PrivateSubnet2
+  DBPrivateSubnetGroup:
+    Type: AWS::DocDB::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: 'private-subnet'
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
 
-#   DocDBCluster:
-#     Type: AWS::DocDB::DBCluster
-#     Properties:
-#       DBSubnetGroupName: !Ref DBPrivateSubnetGroup
-#       MasterUsername: !Sub '{{resolve:secretsmanager:${DocDBClusterRotationSecret}::username}}'
-#       MasterUserPassword: !Sub '{{resolve:secretsmanager:${DocDBClusterRotationSecret}::password}}'
-#       VpcSecurityGroupIds:
-#         - !Ref DatabaseSg
+  DocDBCluster:
+    Type: AWS::DocDB::DBCluster
+    Properties:
+      DBSubnetGroupName: !Ref DBPrivateSubnetGroup
+      MasterUsername: !Sub '{{resolve:secretsmanager:${DocDBClusterRotationSecret}::username}}'
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:${DocDBClusterRotationSecret}::password}}'
+      VpcSecurityGroupIds:
+        - !Ref DatabaseSg
 
-#   DocDBInstance:
-#     Type: AWS::DocDB::DBInstance
-#     Properties:
-#       DBClusterIdentifier: !Ref DocDBCluster
-#       DBInstanceClass: db.t3.medium
+  DocDBInstance:
+    Type: AWS::DocDB::DBInstance
+    Properties:
+      DBClusterIdentifier: !Ref DocDBCluster
+      DBInstanceClass: db.t3.medium
 
-#   DBIsolatedSubnetGroup:
-#     Type: AWS::DocDB::DBSubnetGroup
-#     Properties:
-#       DBSubnetGroupDescription: 'isolated-subnet'
-#       SubnetIds:
-#         - !Ref IsolatedSubnet1
-#         - !Ref IsolatedSubnet2
+  DBIsolatedSubnetGroup:
+    Type: AWS::DocDB::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: 'isolated-subnet'
+      SubnetIds:
+        - !Ref IsolatedSubnet1
+        - !Ref IsolatedSubnet2
 
-#   SecretDocDBClusterAttachment:
-#     Type: AWS::SecretsManager::SecretTargetAttachment
-#     Properties:
-#       SecretId: !Ref DocDBClusterRotationSecret
-#       TargetId: !Ref DocDBCluster
-#       TargetType: AWS::DocDB::DBCluster
+  SecretDocDBClusterAttachment:
+    Type: AWS::SecretsManager::SecretTargetAttachment
+    Properties:
+      SecretId: !Ref DocDBClusterRotationSecret
+      TargetId: !Ref DocDBCluster
+      TargetType: AWS::DocDB::DBCluster
 
 
 # MARK: ECR
@@ -925,8 +1015,82 @@ Resources:
           Value: production
 
 
+# MARK: EKS
+  EKSClusterRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - eks.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+        - arn:aws:iam::aws:policy/AmazonEKSServicePolicy
 
+  EKSNodeGroupRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
 
+  EKSCluster:
+    Type: AWS::EKS::Cluster
+    Properties:
+      Name: !Sub ${EnvironmentName}-Cluster
+      Version: "1.30"
+      RoleArn: !GetAtt EKSClusterRole.Arn
+      AccessConfig:
+        AuthenticationMode: API_AND_CONFIG_MAP
+        # BootstrapClusterCreatorAdminPermissions: false
+      ResourcesVpcConfig:
+        SecurityGroupIds:
+          - !Ref ApplicationSg
+        SubnetIds:
+          - !Ref PrivateSubnet1
+          - !Ref PrivateSubnet2
+        EndpointPublicAccess: true
+        EndpointPrivateAccess: true
+      Logging:
+        ClusterLogging:
+          EnabledTypes:
+            - Type: api
+            - Type: audit
+
+  EKSNodegroup:
+    Type: 'AWS::EKS::Nodegroup'
+    Properties:
+      ClusterName: !Ref EKSCluster
+      NodeRole: !GetAtt EKSNodeGroupRole.Arn
+      CapacityType: ON_DEMAND
+      InstanceTypes:
+        - t3.medium
+      Labels:
+        Name: Application
+      ScalingConfig:
+        MinSize: 1
+        DesiredSize: 1
+        MaxSize: 1
+      Subnets:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
 
 
 # # MARK: App Config
@@ -1037,13 +1201,17 @@ Outputs:
     Description: A reference to the Isolated subnet in the 2nd Availability Zone
     Value: !Ref IsolatedSubnet2
 
-  # LamdbaArn:
-  #   Description: A reference to the Isolated subnet in the 2nd Availability Zone
-  #   Value: !GetAtt  LambdaFunction.Arn
+  BastionHostInstance:
+    Description: Pulbic IP
+    Value: !GetAtt BastionHostInstance.PublicIp
 
-  # ApiGatewayUrl:
-  #   Description: URL of the API Gateway
-  #   Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+  LamdbaArn:
+    Description: A reference to the Isolated subnet in the 2nd Availability Zone
+    Value: !GetAtt  LambdaFunction.Arn
+
+  ApiGatewayUrl:
+    Description: URL of the API Gateway
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod"
   
   # AlbEnddPoint:
   #   Description: URL of the ALB

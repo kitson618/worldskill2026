@@ -1,0 +1,30 @@
+{
+	"efs_path": "/mnt/efs",
+	"db_config": {
+		"host": "template-kcwan-rdsdbcluster-rrlnvqeo7tkv.c7ynqw1udxwr.us-east-1.rds.amazonaws.com",
+		"user": "masteruser",
+		"password": "72e5HPx87iU%hW!lfuAT5VtJ5Nc<",
+		"database": "cloudraiser"
+	},
+	"documentdb_config": {
+		"host": "docdbcluster-tcimhlglem51.cluster-c7ynqw1udxwr.us-east-1.docdb.amazonaws.com",
+		"name": "adminuser",
+		"password": "I0tlo7Oe7pkJaOeM",
+		"port": 27017
+	},
+	"dynamodb_config": {
+		"table": "Template-Kcwan-DDBTable-B8RE8VU0XTH4"
+	},
+	"redis_config": {
+		"host": "clustercfg.template-redis.jo5ek8.memorydb.us-east-1.amazonaws.com",
+		"port": 6379
+	},
+	"s3_config": {
+		"bucket_name": "template-application-608671652196"
+	},
+	"api_gateway_config": {
+		"api_gateway_url": "https://imjx7mdbe5.execute-api.us-east-1.amazonaws.com/Prod",
+		"api_key": "aHpvkgDwbcaRpznswAlyP7uhQSNdlMKFmReS0Ffe"
+	}
+}
+
