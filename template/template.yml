@@ -467,7 +467,6 @@ Resources:
       KeyType: API_KEY
       UsagePlanId: !Ref ApiUsagePlan
 
-
 # MARK: ALB LOG Bucket
   AlbLogS3Bucket:
     Type: AWS::S3::Bucket

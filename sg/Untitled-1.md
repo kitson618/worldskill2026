@@ -1,0 +1,1 @@
+apigateway = https://9acvxjrcxk.execute-api.us-east-1.amazonaws.com/v1

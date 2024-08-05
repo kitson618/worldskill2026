@@ -13,3 +13,8 @@ EXPOSE 8080
 RUN chmod +x ./product
 # Run the server executable
 CMD ["./product"]
+
+
+
+
+

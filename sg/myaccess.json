@@ -1,0 +1,249 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Condition": {
+                "StringNotEquals": {
+                    "ec2:Region": "us-east-1"
+                }
+            },
+            "Resource": "*",
+            "Action": [
+                "ec2:*"
+            ],
+            "Effect": "Deny",
+            "Sid": "ControlAccessToRegion"
+        },
+        {
+            "Resource": "*",
+            "Action": [
+                "ec2:*",
+                "autoscaling:*",
+                "lambda:GetAccountSettings",
+                "lambda:GetEventSourceMapping",
+                "lambda:GetFunction",
+                "lambda:GetFunctionConfiguration",
+                "lambda:GetFunctionCodeSigningConfig",
+                "lambda:GetFunctionConcurrency",
+                "lambda:ListEventSourceMappings",
+                "lambda:ListFunctions",
+                "lambda:ListTags",
+                "lambda:AddPermission",
+                "rds:*",
+                "apigateway:*",
+                "dynamodb:*",
+                "kms:*",
+                "elasticloadbalancing:*",
+                "elasticfilesystem:*",
+                "s3:*",
+                "cloudfront:*",
+                "iam:CreateServiceLinkedRole",
+                "iam:Generate*",
+                "iam:Get*",
+                "iam:List*",
+                "logs:*",
+                "cloudwatch:*",
+                "events:*",
+                "elasticache:*",
+                "cloudtrail:*",
+                "config:*",
+                "sqs:*",
+                "sns:*",
+                "states:*",
+                "tag:getResources",
+                "resource-groups:*",
+                "application-autoscaling:*",
+                "wafv2:*",
+                "appsync:ListGraphqlApis",
+                "ec2:DescribeRegions"
+            ],
+            "Effect": "Allow",
+            "Sid": "OverlyPermissivePolicy"
+        },
+        {
+            "Condition": {
+                "StringEquals": {
+                    "ec2:InstanceType": [
+                        "t2.micro"
+                    ]
+                }
+            },
+            "Resource": [
+                "arn:aws:ec2:*:*:instance/*"
+            ],
+            "Action": "ec2:RunInstances",
+            "Effect": "Allow",
+            "Sid": "OnlyAllowLaunchOfT2Instances"
+        },
+        {
+            "Resource": [
+                "arn:aws:ec2:*::image/ami-*",
+                "arn:aws:ec2:*:*:subnet/*",
+                "arn:aws:ec2:*:*:network-interface/*",
+                "arn:aws:ec2:*:*:volume/*",
+                "arn:aws:ec2:*:*:key-pair/*",
+                "arn:aws:ec2:*:*:security-group/*"
+            ],
+            "Action": "ec2:RunInstances",
+            "Effect": "Allow",
+            "Sid": "AllowAllTheOtherRunInstancesResources"
+        },
+        {
+            "Resource": "*",
+            "Action": [
+                "ec2:Accept*",
+                "ec2:Allocate*",
+                "ec2:Assign*",
+                "ec2:Associate*",
+                "ec2:Attach*",
+                "ec2:Authorize*",
+                "ec2:Bundle*",
+                "ec2:Cancel*",
+                "ec2:Confirm*",
+                "ec2:Copy*",
+                "ec2:Create*",
+                "ec2:Delete*",
+                "ec2:Deregister*",
+                "ec2:Describe*",
+                "ec2:Detach*",
+                "ec2:Disable*",
+                "ec2:Disassociate*",
+                "ec2:Enable*",
+                "ec2:Get*",
+                "ec2:Import*",
+                "ec2:Modify*",
+                "ec2:Monitor*",
+                "ec2:Move*",
+                "ec2:Reboot*",
+                "ec2:Register*",
+                "ec2:Reject*",
+                "ec2:Release*",
+                "ec2:Replace*",
+                "ec2:Report*",
+                "ec2:Reset*",
+                "ec2:Restore*",
+                "ec2:Revoke*",
+                "ec2:Start*",
+                "ec2:Stop*",
+                "ec2:Terminate*",
+                "ec2:Unassign*",
+                "ec2:Unmonitor*",
+                "ec2:DescribeInstances",
+                "ec2:DescribeInstanceStatus",
+                "ec2:DescribeKeyPairs",
+                "ec2:DescribeSecurityGroups",
+                "ec2:DescribeSubnets",
+                "ec2:DescribeImages",
+                "ec2:DescribeAvailabilityZones",
+                "ec2:CreateTags",
+                "ec2:CreateLaunchTemplate*",
+                "ec2:DeleteLaunchTemplate*",
+                "ec2:DescribeLaunchTemplates*"
+            ],
+            "Effect": "Allow",
+            "Sid": "AllowAllOtherEC2ActionsExceptSpotAndReserved"
+        },
+        {
+            "Resource": "*",
+            "Action": [
+                "ec2:ModifyReservedInstances",
+                "ec2:PurchaseHostReservation",
+                "ec2:PurchaseReservedInstancesOffering",
+                "ec2:PurchaseScheduledInstances",
+                "rds:PurchaseReservedDBInstancesOffering",
+                "dynamodb:PurchaseReservedCapacityOfferings",
+                "ec2:CancelSpotFleetRequests",
+                "ec2:ModifySpotFleetRequest",
+                "ec2:RequestSpotFleet",
+                "ec2:RequestSpotInstances",
+                "ec2:CancelSpotInstanceRequests",
+                "ec2:CreateSpotDatafeedSubscription",
+                "ec2:DeleteSpotDatafeedSubscription",
+                "ec2:CreateVpc",
+                "ec2:DeleteVpc",
+                "ec2:CreateInternetGateway",
+                "ec2:AssociateIamInstanceProfile",
+                "ec2:ReplaceIamInstanceProfileAssociation",
+                "ec2:DisassociateIamInstanceProfile"
+            ],
+            "Effect": "Deny",
+            "Sid": "DontBuyReservationsOrSpotPlz"
+        },
+        {
+            "Resource": "*",
+            "Effect": "Allow",
+            "Action": [
+                "iam:CreateServiceLinkedRole",
+                "iam:PassRole"
+            ]
+        },
+        {
+            "Resource": "*",
+            "Effect": "Allow",
+            "Action": [
+                "cloud9:DescribeEnvironmentMemberships",
+                "cloud9:ValidateEnvironmentName"
+            ]
+        },
+        {
+            "Resource": "*",
+            "Condition": {
+                "StringLike": {
+                    "cloud9:InstanceType": "t2.*"
+                }
+            },
+            "Effect": "Allow",
+            "Action": "cloud9:CreateEnvironmentEC2"
+        },
+        {
+            "Resource": "*",
+            "Effect": "Allow",
+            "Action": [
+                "ssm:DescribeAssociation",
+                "ssm:GetDocument",
+                "ssm:ListAssociations",
+                "ssm:UpdateAssociationStatus",
+                "ssm:UpdateInstanceInformation",
+                "ec2messages:AcknowledgeMessage",
+                "ec2messages:DeleteMessage",
+                "ec2messages:FailMessage",
+                "ec2messages:GetEndpoint",
+                "ec2messages:GetMessages",
+                "ec2messages:SendReply",
+                "ds:CreateComputer",
+                "ds:DescribeDirectories",
+                "ssm:ListCommandInvocations",
+                "ssm:ListDocuments",
+                "ssm:DescribeInstanceProperties",
+                "ssm:DescribeDocument",
+                "ssm:DescribeDocumentParameters",
+                "ssm:SendCommand",
+                "acm:ListCertificates"
+            ],
+            "Sid": "SSMPolicyForMiniGames"
+        },
+        {
+            "Sid": "DenyParticularVPCOps",
+            "Effect": "Deny",
+            "Action": [
+                "ec2:CreateInternetGateway",
+                "ec2:DetachInternetGateway",
+                "ec2:CreateVpc",
+                "ec2:DeleteVpc"
+            ],
+            "Resource": [
+                "*"
+            ]
+        },
+        {
+            "Sid": "DenyEC2AttachSSMRole",
+            "Effect": "Deny",
+            "Action": [
+                "iam:PassRole"
+            ],
+            "Resource": [
+                "arn:aws:iam::*:role/ec2-ssm-role*"
+            ]
+        }
+    ]
+}

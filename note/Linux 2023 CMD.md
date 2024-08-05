@@ -102,3 +102,7 @@ sudo iptables -t nat -A POSTROUTING -o ens5 -s 0.0.0.0/0 -j MASQUERADE
 sudo /sbin/iptables -F FORWARD
 sudo service iptables save
 ```
+
+
+```
+sudo cat /var/log/cloud-init-output.log
