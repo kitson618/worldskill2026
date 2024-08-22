@@ -395,77 +395,127 @@ Resources:
       TracingConfig:
         Mode: Active
 
+# MARK: HTTP API Gateway
+  HttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub ${AWS::StackName}-HttpApi
+      ProtocolType: HTTP
+
+  HttpApiIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt LambdaFunction.Arn
+      PayloadFormatVersion: '2.0'
+
+  HttpApiRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'GET /'
+      Target: !Join 
+        - /
+        - - integrations
+          - !Ref HttpApiIntegration
+
+  HttpApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref HttpApi
+      StageName: $default
+      AutoDeploy: true
+
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join 
+        - ''
+        - - 'arn:'
+          - !Ref AWS::Partition
+          - ':execute-api:'
+          - !Ref AWS::Region
+          - ':'
+          - !Ref AWS::AccountId
+          - ':'
+          - !Ref HttpApi
+          - '/*'
+
 # MARK: API REST API
-  ApiGateway:
-    Type: AWS::ApiGateway::RestApi
-    Properties:
-      Description: !Ref EnvironmentName
-      EndpointConfiguration:
-        Types:
-          - REGIONAL
-      Name: !Ref EnvironmentName
+  # ApiGateway:
+  #   Type: AWS::ApiGateway::RestApi
+  #   Properties:
+  #     Description: !Ref EnvironmentName
+  #     EndpointConfiguration:
+  #       Types:
+  #         - REGIONAL
+  #     Name: !Ref EnvironmentName
 
-  ApiMethod:
-    Type: 'AWS::ApiGateway::Method'
-    Properties:
-      RestApiId: !Ref ApiGateway
-      ResourceId: !GetAtt ApiGateway.RootResourceId
-      HttpMethod: !Ref ApiGatewayHTTPMethod
-      MethodResponses:
-        - StatusCode: '200'
-          ResponseModels:
-            application/json: Empty
-      AuthorizationType: NONE
-      Integration:
-        Type: AWS
-        IntegrationHttpMethod: !Ref ApiGatewayHTTPMethod
-        # Credentials: !Sub arn:aws:iam::${AWS::AccountId}:role/MyLambdaExecutionRole
-        PassthroughBehavior: WHEN_NO_TEMPLATES
-        IntegrationResponses:
-          - StatusCode: "200"
-        Uri: !Sub >-
-          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunction.Arn}/invocations
+  # ApiMethod:
+  #   Type: 'AWS::ApiGateway::Method'
+  #   Properties:
+  #     RestApiId: !Ref ApiGateway
+  #     ResourceId: !GetAtt ApiGateway.RootResourceId
+  #     HttpMethod: !Ref ApiGatewayHTTPMethod
+  #     MethodResponses:
+  #       - StatusCode: '200'
+  #         ResponseModels:
+  #           application/json: Empty
+  #     AuthorizationType: NONE
+  #     Integration:
+  #       Type: AWS
+  #       IntegrationHttpMethod: !Ref ApiGatewayHTTPMethod
+  #       # Credentials: !Sub arn:aws:iam::${AWS::AccountId}:role/MyLambdaExecutionRole
+  #       PassthroughBehavior: WHEN_NO_TEMPLATES
+  #       IntegrationResponses:
+  #         - StatusCode: "200"
+  #       Uri: !Sub >-
+  #         arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunction.Arn}/invocations
 
-  Deployment:
-    DependsOn: ApiMethod
-    Type: 'AWS::ApiGateway::Deployment'
-    Properties:
-      RestApiId: !Ref ApiGateway
-      StageName: Prod
+  # Deployment:
+  #   DependsOn: ApiMethod
+  #   Type: 'AWS::ApiGateway::Deployment'
+  #   Properties:
+  #     RestApiId: !Ref ApiGateway
+  #     StageName: Prod
       
-  ApiKey:
-    Type: 'AWS::ApiGateway::ApiKey'
-    DependsOn:
-      - Deployment
-    Properties:
-      Name: !Sub ${EnvironmentName}-apikey
-      Description: !Sub ${EnvironmentName}-apikey
-      Enabled: true
-      StageKeys:
-        - RestApiId: !Ref ApiGateway
-          StageName: Prod
+  # ApiKey:
+  #   Type: 'AWS::ApiGateway::ApiKey'
+  #   DependsOn:
+  #     - Deployment
+  #   Properties:
+  #     Name: !Sub ${EnvironmentName}-apikey
+  #     Description: !Sub ${EnvironmentName}-apikey
+  #     Enabled: true
+  #     StageKeys:
+  #       - RestApiId: !Ref ApiGateway
+  #         StageName: Prod
 
-  ApiUsagePlan:
-    Type: "AWS::ApiGateway::UsagePlan"
-    Properties:
-      ApiStages: 
-      - ApiId: !Ref ApiGateway
-        Stage: Prod     
-      Description: "Api Usage Plan"
-      Quota:
-        Limit: 2000
-        Period: MONTH
-      Throttle:
-        BurstLimit: 10
-        RateLimit: 10
-      UsagePlanName: api-userplan
+  # ApiUsagePlan:
+  #   Type: "AWS::ApiGateway::UsagePlan"
+  #   Properties:
+  #     ApiStages: 
+  #     - ApiId: !Ref ApiGateway
+  #       Stage: Prod     
+  #     Description: "Api Usage Plan"
+  #     Quota:
+  #       Limit: 2000
+  #       Period: MONTH
+  #     Throttle:
+  #       BurstLimit: 10
+  #       RateLimit: 10
+  #     UsagePlanName: api-userplan
 
-  ApiUsagePlanKey:
-    Type: "AWS::ApiGateway::UsagePlanKey"
-    Properties:
-      KeyId: !Ref ApiKey
-      KeyType: API_KEY
-      UsagePlanId: !Ref ApiUsagePlan
+  # ApiUsagePlanKey:
+  #   Type: "AWS::ApiGateway::UsagePlanKey"
+  #   Properties:
+  #     KeyId: !Ref ApiKey
+  #     KeyType: API_KEY
+  #     UsagePlanId: !Ref ApiUsagePlan
 
 # MARK: ALB LOG Bucket
   AlbLogS3Bucket:
@@ -606,6 +656,7 @@ Resources:
           dnf install mysql-community-client -y
           rm -f mysql80-community-release-el9-1.noarch.rpm
           yum install libxcrypt-compat -y
+
       NetworkInterfaces: 
         - AssociatePublicIpAddress: "true"
           DeviceIndex: "0"
@@ -616,7 +667,7 @@ Resources:
         - Key: Name
           Value: bastion
 
-# # MARK: AutoScaling Group
+#  MARK: AutoScaling Group
   ApplicationSg:
     Type: AWS::EC2::SecurityGroup
     DependsOn: VPC
@@ -637,6 +688,57 @@ Resources:
           ToPort: 22
           CidrIp: !Ref VpcCIDR
 
+  ALBRequestCountHighAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Alarm if ALB request count exceeds 5
+      Namespace: AWS/ApplicationELB
+      MetricName: RequestCount
+      Dimensions:
+        - Name: LoadBalancer
+          Value: !GetAtt ApplicationLoadBalancer.LoadBalancerFullName
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref ScaleUpPolicy
+
+  ALBRequestCountLowAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Alarm if ALB request count is less than or equal to 2
+      Namespace: AWS/ApplicationELB
+      MetricName: RequestCount
+      Dimensions:
+        - Name: LoadBalancer
+          Value: !GetAtt ApplicationLoadBalancer.LoadBalancerFullName
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 5
+      Threshold: 2
+      ComparisonOperator: LessThanOrEqualToThreshold
+      AlarmActions:
+        - !Ref ScaleDownPolicy
+
+  ScaleUpPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref applicationAsg
+      Cooldown: 300
+      ScalingAdjustment: 1
+
+  ScaleDownPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref applicationAsg
+      Cooldown: 300
+      ScalingAdjustment: -1
+
+#  MARK: LaunchTemplate
   applicationLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties: 
@@ -650,17 +752,21 @@ Resources:
             Tags:
             - Key: "Name"
               Value: "Application"
+            - Key: "Environment"
+              Value: !Ref EnvironmentName
         UserData:
           Fn::Base64: !Sub |
              #!/bin/bash
              yum update -y
              cd /root
              wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
-
+             aws s3 cp s3://kcwan-lab-608671652196/gameday/ws-ec2-pipeline-server .
+             chmod 700 ws-ec2-pipeline-server
+             ./ws-ec2-pipeline-server
         IamInstanceProfile:
           Arn: !GetAtt EC2Role.Arn
         NetworkInterfaces: 
-          - AssociatePublicIpAddress: "true"
+          - AssociatePublicIpAddress: "false"
             DeviceIndex: "0"
             Groups: 
               # - !Ref BastionSg
@@ -672,73 +778,76 @@ Resources:
       LaunchTemplate:
         LaunchTemplateId: !Ref applicationLaunchTemplate
         Version: !GetAtt applicationLaunchTemplate.LatestVersionNumber
-      MaxSize: '0'
-      MinSize: '0'
-      TargetGroupARNs:
-        - !Ref EC2TargetGroup
-      VPCZoneIdentifier:   
-        - !Ref PrivateSubnet1
-        - !Ref PrivateSubnet2
+      MaxSize: '5'
+      MinSize: '1'
+      DesiredCapacity: '1'
       MetricsCollection: 
         - Granularity: 1Minute
           Metrics: 
             - GroupMinSize
             - GroupMaxSize
+            - GroupDesiredCapacity
+            - GroupInServiceInstances
+      TargetGroupARNs:
+        - !Ref EC2TargetGroup
+      VPCZoneIdentifier:   
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
 
 # MARK: EFS
-  FileSystemSg:
-    Type: AWS::EC2::SecurityGroup
-    DependsOn: VPC
-    Properties:
-      GroupDescription: efs
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 2049
-          ToPort: 2049
-          SourceSecurityGroupId: !Ref ApplicationSg
+  # FileSystemSg:
+  #   Type: AWS::EC2::SecurityGroup
+  #   DependsOn: VPC
+  #   Properties:
+  #     GroupDescription: efs
+  #     VpcId: !Ref VPC
+  #     SecurityGroupIngress:
+  #       - IpProtocol: tcp
+  #         FromPort: 2049
+  #         ToPort: 2049
+  #         SourceSecurityGroupId: !Ref ApplicationSg
 
-  FileSystemResource:
-    Type: 'AWS::EFS::FileSystem'
-    Properties:
-      # AvailabilityZoneName: us-east-1a
-      BackupPolicy:
-        Status: ENABLED
-      Encrypted: true
-      LifecyclePolicies:
-        - TransitionToIA: AFTER_30_DAYS
-        - TransitionToPrimaryStorageClass: AFTER_1_ACCESS
-      FileSystemTags:
-        - Key: Name
-          Value: !Ref EnvironmentName
-      FileSystemPolicy:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: "Allow"
-            Action:
-              - "elasticfilesystem:ClientRootAccess"
-              - "elasticfilesystem:ClientWrite"
-              - "elasticfilesystem:ClientMount"
-            Principal:
-              AWS: '*'
-            Condition:
-              Bool:
-                "elasticfilesystem:AccessedViaMountTarget": "true"
-  EfsMountTargetResource1:
-    Type: AWS::EFS::MountTarget
-    Properties:
-      FileSystemId: !Ref FileSystemResource
-      SubnetId: !Ref PrivateSubnet1
-      SecurityGroups:
-      - !Ref FileSystemSg
+  # FileSystemResource:
+  #   Type: 'AWS::EFS::FileSystem'
+  #   Properties:
+  #     # AvailabilityZoneName: us-east-1a
+  #     BackupPolicy:
+  #       Status: ENABLED
+  #     Encrypted: true
+  #     LifecyclePolicies:
+  #       - TransitionToIA: AFTER_30_DAYS
+  #       - TransitionToPrimaryStorageClass: AFTER_1_ACCESS
+  #     FileSystemTags:
+  #       - Key: Name
+  #         Value: !Ref EnvironmentName
+  #     FileSystemPolicy:
+  #       Version: "2012-10-17"
+  #       Statement:
+  #         - Effect: "Allow"
+  #           Action:
+  #             - "elasticfilesystem:ClientRootAccess"
+  #             - "elasticfilesystem:ClientWrite"
+  #             - "elasticfilesystem:ClientMount"
+  #           Principal:
+  #             AWS: '*'
+  #           Condition:
+  #             Bool:
+  #               "elasticfilesystem:AccessedViaMountTarget": "true"
+  # EfsMountTargetResource1:
+  #   Type: AWS::EFS::MountTarget
+  #   Properties:
+  #     FileSystemId: !Ref FileSystemResource
+  #     SubnetId: !Ref PrivateSubnet1
+  #     SecurityGroups:
+  #     - !Ref FileSystemSg
 
-  EfsMountTargetResource2:
-    Type: AWS::EFS::MountTarget
-    Properties:
-      FileSystemId: !Ref FileSystemResource
-      SubnetId: !Ref PrivateSubnet2
-      SecurityGroups:
-      - !Ref FileSystemSg
+  # EfsMountTargetResource2:
+  #   Type: AWS::EFS::MountTarget
+  #   Properties:
+  #     FileSystemId: !Ref FileSystemResource
+  #     SubnetId: !Ref PrivateSubnet2
+  #     SecurityGroups:
+  #     - !Ref FileSystemSg
 
 
 # MARK: DynamoDB
@@ -961,81 +1070,81 @@ Resources:
 
 
 # MARK: EKS
-  EKSClusterRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: "Allow"
-            Principal:
-              Service:
-                - eks.amazonaws.com
-            Action:
-              - "sts:AssumeRole"
-      Path: "/"
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
-        - arn:aws:iam::aws:policy/AmazonEKSServicePolicy
+  # EKSClusterRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Version: "2012-10-17"
+  #       Statement:
+  #         - Effect: "Allow"
+  #           Principal:
+  #             Service:
+  #               - eks.amazonaws.com
+  #           Action:
+  #             - "sts:AssumeRole"
+  #     Path: "/"
+  #     ManagedPolicyArns:
+  #       - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+  #       - arn:aws:iam::aws:policy/AmazonEKSServicePolicy
 
-  EKSNodeGroupRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: "Allow"
-            Principal:
-              Service:
-                - ec2.amazonaws.com
-            Action:
-              - "sts:AssumeRole"
-      Path: "/"
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
-        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
-        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+  # EKSNodeGroupRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Version: "2012-10-17"
+  #       Statement:
+  #         - Effect: "Allow"
+  #           Principal:
+  #             Service:
+  #               - ec2.amazonaws.com
+  #           Action:
+  #             - "sts:AssumeRole"
+  #     Path: "/"
+  #     ManagedPolicyArns:
+  #       - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+  #       - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+  #       - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
 
-  EKSCluster:
-    Type: AWS::EKS::Cluster
-    Properties:
-      Name: !Sub ${EnvironmentName}-Cluster
-      Version: "1.30"
-      RoleArn: !GetAtt EKSClusterRole.Arn
-      AccessConfig:
-        AuthenticationMode: API_AND_CONFIG_MAP
-        # BootstrapClusterCreatorAdminPermissions: false
-      ResourcesVpcConfig:
-        SecurityGroupIds:
-          - !Ref ApplicationSg
-        SubnetIds:
-          - !Ref PrivateSubnet1
-          - !Ref PrivateSubnet2
-        EndpointPublicAccess: true
-        EndpointPrivateAccess: true
-      Logging:
-        ClusterLogging:
-          EnabledTypes:
-            - Type: api
-            - Type: audit
+  # EKSCluster:
+  #   Type: AWS::EKS::Cluster
+  #   Properties:
+  #     Name: !Sub ${EnvironmentName}-Cluster
+  #     Version: "1.30"
+  #     RoleArn: !GetAtt EKSClusterRole.Arn
+  #     AccessConfig:
+  #       AuthenticationMode: API_AND_CONFIG_MAP
+  #       # BootstrapClusterCreatorAdminPermissions: false
+  #     ResourcesVpcConfig:
+  #       SecurityGroupIds:
+  #         - !Ref ApplicationSg
+  #       SubnetIds:
+  #         - !Ref PrivateSubnet1
+  #         - !Ref PrivateSubnet2
+  #       EndpointPublicAccess: true
+  #       EndpointPrivateAccess: true
+  #     Logging:
+  #       ClusterLogging:
+  #         EnabledTypes:
+  #           - Type: api
+  #           - Type: audit
 
-  EKSNodegroup:
-    Type: 'AWS::EKS::Nodegroup'
-    Properties:
-      ClusterName: !Ref EKSCluster
-      NodeRole: !GetAtt EKSNodeGroupRole.Arn
-      CapacityType: ON_DEMAND
-      InstanceTypes:
-        - t3.medium
-      Labels:
-        Name: Application
-      ScalingConfig:
-        MinSize: 1
-        DesiredSize: 1
-        MaxSize: 1
-      Subnets:
-        - !Ref PrivateSubnet1
-        - !Ref PrivateSubnet2
+  # EKSNodegroup:
+  #   Type: 'AWS::EKS::Nodegroup'
+  #   Properties:
+  #     ClusterName: !Ref EKSCluster
+  #     NodeRole: !GetAtt EKSNodeGroupRole.Arn
+  #     CapacityType: ON_DEMAND
+  #     InstanceTypes:
+  #       - t3.medium
+  #     Labels:
+  #       Name: Application
+  #     ScalingConfig:
+  #       MinSize: 1
+  #       DesiredSize: 1
+  #       MaxSize: 1
+  #     Subnets:
+  #       - !Ref PrivateSubnet1
+  #       - !Ref PrivateSubnet2
 
 
 # MARK: App Config
@@ -1077,13 +1186,13 @@ Resources:
       Description: ' configuration prod value'
       Content: !Sub |
         {
-        "DBSeretARN" : "arn:aws:secretsmanager:us-east-1:608671652196:secret:DocDBClusterRotationSecret-1DpxLym0wK50-TQ8oTd",
+        "DBSeretARN" : "${DocDBClusterRotationSecret}",
         "MongoDbDatabase" : "unicorndb",
         "MongoDbCollection" : "unicorncollection",
         "MongoDbCAFilePath" : "./global-bundle.pem",
         "Port": 80,
-        "Bucket": "gameday-608671652196",
-        "ApiGatewayUrl" : "https://ihowe95td3.execute-api.us-east-1.amazonaws.com/Prod"
+        "Bucket": "${ApplcationBucket}",
+        "ApiGatewayUrl" : "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com"
         }
       ContentType: 'application/json'
 
@@ -1102,18 +1211,19 @@ Resources:
         - Key: Env
           Value: !Ref AppConfigStage
 
-  appConfigDeployment:
-    Type: AWS::AppConfig::Deployment
-    Properties:
-      ApplicationId: !Ref Application
-      EnvironmentId: !Ref ProdEnvironment
-      DeploymentStrategyId: !Ref DeploymentStrategy
-      ConfigurationProfileId: !Ref ConfigurationProfile
-      ConfigurationVersion: '1'
-      Description: !Sub ${EnvironmentName}-Deployment
-      Tags:
-        - Key: Env
-          Value: !Ref AppConfigStage
+  # appConfigDeployment:
+  #   DependsOn: ConfigurationProfile
+  #   Type: AWS::AppConfig::Deployment
+  #   Properties:
+  #     ApplicationId: !Ref Application
+  #     EnvironmentId: !Ref ProdEnvironment
+  #     DeploymentStrategyId: !Ref DeploymentStrategy
+  #     ConfigurationProfileId: !Ref ConfigurationProfile
+  #     ConfigurationVersion: '3'
+  #     Description: !Sub ${EnvironmentName}-Deployment
+  #     Tags:
+  #       - Key: Env
+  #         Value: !Ref AppConfigStage
 
 
 # MARK: Output
@@ -1154,9 +1264,9 @@ Outputs:
     Description: A reference to the Isolated subnet in the 2nd Availability Zone
     Value: !GetAtt  LambdaFunction.Arn
 
-  ApiGatewayUrl:
-    Description: URL of the API Gateway
-    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+  # ApiGatewayUrl:
+  #   Description: URL of the API Gateway
+  #   Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod"
   
   AlbEnddPoint:
     Description: URL of the ALB
