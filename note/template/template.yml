@@ -1219,7 +1219,7 @@ Resources:
   #     EnvironmentId: !Ref ProdEnvironment
   #     DeploymentStrategyId: !Ref DeploymentStrategy
   #     ConfigurationProfileId: !Ref ConfigurationProfile
-  #     ConfigurationVersion: '3'
+  #     ConfigurationVersion: '1'
   #     Description: !Sub ${EnvironmentName}-Deployment
   #     Tags:
   #       - Key: Env
