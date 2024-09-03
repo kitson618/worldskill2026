@@ -279,102 +279,102 @@ Resources:
       RouteTableId: !Ref IsolatedRouteTable2
       SubnetId: !Ref IsolatedSubnet2
 
-# MARK: Vpc Flow Log Bucket
-  VpcFlowLogS3Bucket:
-    Type: AWS::S3::Bucket
-    Properties: 
-      AccessControl: Private
-      BucketName: !Sub ${EnvironmentName}-vpcflowlog-logging-${AWS::AccountId}
-      VersioningConfiguration:
-        Status: Enabled
-      BucketEncryption: 
-        ServerSideEncryptionConfiguration: 
-        - ServerSideEncryptionByDefault:
-            SSEAlgorithm: AES256
+# # MARK: Vpc Flow Log Bucket
+#   VpcFlowLogS3Bucket:
+#     Type: AWS::S3::Bucket
+#     Properties: 
+#       AccessControl: Private
+#       BucketName: !Sub ${EnvironmentName}-vpcflowlog-logging-${AWS::AccountId}
+#       VersioningConfiguration:
+#         Status: Enabled
+#       BucketEncryption: 
+#         ServerSideEncryptionConfiguration: 
+#         - ServerSideEncryptionByDefault:
+#             SSEAlgorithm: AES256
 
-# MARK: VPC FlowLog - S3
-  S3Flowlog:
-    DependsOn: VpcFlowLogS3Bucket
-    Type: AWS::EC2::FlowLog
-    Properties:
-      LogDestination: !GetAtt VpcFlowLogS3Bucket.Arn
-      LogDestinationType: s3
-      LogFormat: ${version} ${vpc-id} ${subnet-id} ${instance-id} ${srcaddr} ${dstaddr} ${srcport} ${dstport} ${protocol} ${tcp-flags} ${type} ${pkt-srcaddr} ${pkt-dstaddr}
-      MaxAggregationInterval: 60
-      DestinationOptions:
-        FileFormat: parquet
-        HiveCompatiblePartitions: true
-        PerHourPartition: true
-      ResourceId: !Ref VPC
-      ResourceType: VPC
-      TrafficType: ALL
-      Tags:
-        - Key: Name
-          Value: VPC-flowlog-s3
-        - Key: Purpose
-          Value: AllTraffic
+# # MARK: VPC FlowLog - S3
+#   S3Flowlog:
+#     DependsOn: VpcFlowLogS3Bucket
+#     Type: AWS::EC2::FlowLog
+#     Properties:
+#       LogDestination: !GetAtt VpcFlowLogS3Bucket.Arn
+#       LogDestinationType: s3
+#       LogFormat: ${version} ${vpc-id} ${subnet-id} ${instance-id} ${srcaddr} ${dstaddr} ${srcport} ${dstport} ${protocol} ${tcp-flags} ${type} ${pkt-srcaddr} ${pkt-dstaddr}
+#       MaxAggregationInterval: 60
+#       DestinationOptions:
+#         FileFormat: parquet
+#         HiveCompatiblePartitions: true
+#         PerHourPartition: true
+#       ResourceId: !Ref VPC
+#       ResourceType: VPC
+#       TrafficType: ALL
+#       Tags:
+#         - Key: Name
+#           Value: VPC-flowlog-s3
+#         - Key: Purpose
+#           Value: AllTraffic
 
 
-# MARK: VPC FlowLog - Cloudwatch
-  CloudWatchVpcLogRole: 
-    Type: "AWS::IAM::Role"
-    Properties:
-      RoleName: cloudwatch-vpc-log-role
-      AssumeRolePolicyDocument: 
-        Version: "2012-10-17"
-        Statement: 
-          - Effect: "Allow"
-            Principal: 
-              Service: 
-                - "vpc-flow-logs.amazonaws.com"
-            Action: 
-              - "sts:AssumeRole"
+# # MARK: VPC FlowLog - Cloudwatch
+#   CloudWatchVpcLogRole: 
+#     Type: "AWS::IAM::Role"
+#     Properties:
+#       RoleName: cloudwatch-vpc-log-role
+#       AssumeRolePolicyDocument: 
+#         Version: "2012-10-17"
+#         Statement: 
+#           - Effect: "Allow"
+#             Principal: 
+#               Service: 
+#                 - "vpc-flow-logs.amazonaws.com"
+#             Action: 
+#               - "sts:AssumeRole"
 
-  CloudWatchVpcLogPolicy: 
-    Type: "AWS::IAM::RolePolicy"
-    Properties: 
-      PolicyName: "cloudwatch-vpc-log-policy"
-      PolicyDocument: 
-        Version: "2012-10-17"
-        Statement: 
-          - Effect: "Allow"
-            Action:
-              - "logs:CreateLogGroup"
-              - "logs:CreateLogStream"
-              - "logs:PutLogEvents"
-              - "logs:DescribeLogGroups"
-              - "logs:DescribeLogStreams"
-              - "s3:PutObject"
-              - "s3:GetBucketLocation"
-            Resource: "arn:aws:logs:*:*:log-group:VPCFlowLogs:*"
-      RoleName: !Ref CloudWatchVpcLogRole
+#   CloudWatchVpcLogPolicy: 
+#     Type: "AWS::IAM::RolePolicy"
+#     Properties: 
+#       PolicyName: "cloudwatch-vpc-log-policy"
+#       PolicyDocument: 
+#         Version: "2012-10-17"
+#         Statement: 
+#           - Effect: "Allow"
+#             Action:
+#               - "logs:CreateLogGroup"
+#               - "logs:CreateLogStream"
+#               - "logs:PutLogEvents"
+#               - "logs:DescribeLogGroups"
+#               - "logs:DescribeLogStreams"
+#               - "s3:PutObject"
+#               - "s3:GetBucketLocation"
+#             Resource: "arn:aws:logs:*:*:log-group:VPCFlowLogs:*"
+#       RoleName: !Ref CloudWatchVpcLogRole
 
-  CloudWatchFlow:
-    Type: AWS::EC2::FlowLog
-    Properties:
-      DeliverLogsPermissionArn: !GetAtt CloudWatchVpcLogRole.Arn
-      LogGroupName: FlowLogsGroup
-      ResourceId: !Ref VPC
-      ResourceType: VPC
-      TrafficType: REJECT
-      Tags:
-        - Key: Name
-          Value: VPC-flowlog-cloudwatch
-        - Key: Purpose
-          Value: RejectTraffic
+#   CloudWatchFlow:
+#     Type: AWS::EC2::FlowLog
+#     Properties:
+#       DeliverLogsPermissionArn: !GetAtt CloudWatchVpcLogRole.Arn
+#       LogGroupName: FlowLogsGroup
+#       ResourceId: !Ref VPC
+#       ResourceType: VPC
+#       TrafficType: REJECT
+#       Tags:
+#         - Key: Name
+#           Value: VPC-flowlog-cloudwatch
+#         - Key: Purpose
+#           Value: RejectTraffic
 
-# MARK: Applcation Bucket 
-  ApplcationBucket:
-    Type: AWS::S3::Bucket
-    Properties: 
-      AccessControl: Private
-      BucketName: !Sub ${EnvironmentName}-application-${AWS::AccountId}
-      VersioningConfiguration:
-        Status: Enabled
-      BucketEncryption: 
-        ServerSideEncryptionConfiguration: 
-        - ServerSideEncryptionByDefault:
-            SSEAlgorithm: AES256
+# # MARK: Applcation Bucket 
+#   ApplcationBucket:
+#     Type: AWS::S3::Bucket
+#     Properties: 
+#       AccessControl: Private
+#       BucketName: !Sub ${EnvironmentName}-application-${AWS::AccountId}
+#       VersioningConfiguration:
+#         Status: Enabled
+#       BucketEncryption: 
+#         ServerSideEncryptionConfiguration: 
+#         - ServerSideEncryptionByDefault:
+#             SSEAlgorithm: AES256
 
 # MARK: Lambda Function
   LambdaFunction:
@@ -518,757 +518,757 @@ Resources:
   #     UsagePlanId: !Ref ApiUsagePlan
 
 # MARK: ALB LOG Bucket
-  AlbLogS3Bucket:
-    Type: AWS::S3::Bucket
-    Properties: 
-      AccessControl: Private
-      BucketName: !Sub ${EnvironmentName}-alb-logging-${AWS::AccountId}
-      VersioningConfiguration:
-        Status: Enabled
-      BucketEncryption: 
-        ServerSideEncryptionConfiguration: 
-        - ServerSideEncryptionByDefault:
-            SSEAlgorithm: AES256
+#   AlbLogS3Bucket:
+#     Type: AWS::S3::Bucket
+#     Properties: 
+#       AccessControl: Private
+#       BucketName: !Sub ${EnvironmentName}-alb-logging-${AWS::AccountId}
+#       VersioningConfiguration:
+#         Status: Enabled
+#       BucketEncryption: 
+#         ServerSideEncryptionConfiguration: 
+#         - ServerSideEncryptionByDefault:
+#             SSEAlgorithm: AES256
  
-  AlbLogS3BucketPolicy:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      Bucket: !Ref AlbLogS3Bucket
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Action:
-              - 's3:PutObject'
-            Effect: Allow
-            Resource: 
-              - !Sub "arn:aws:s3:::${AlbLogS3Bucket}"
-              - !Sub "arn:aws:s3:::${AlbLogS3Bucket}/*"
-            Principal: 
-              AWS: 'arn:aws:iam::127311923021:root'
-
-# MARK: ALB
-  AlbSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: ALB Security Group
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
-      - IpProtocol: tcp
-        FromPort: 80
-        ToPort: 80
-        CidrIp: 0.0.0.0/0
-
-  ApplicationLoadBalancer:
-    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
-    Properties:
-      Scheme: internet-facing
-      Subnets: 
-        - !Ref PublicSubnet1
-        - !Ref PublicSubnet2
-      SecurityGroups:
-        - !GetAtt AlbSecurityGroup.GroupId
-      LoadBalancerAttributes:
-        - Key: access_logs.s3.enabled
-          Value: 'true'
-        - Key: access_logs.s3.bucket
-          Value: !Ref AlbLogS3Bucket
-        - Key: access_logs.s3.prefix
-          Value: 'alb-logs'
-
-  EC2TargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-      HealthCheckIntervalSeconds: 30
-      HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 15
-      HealthyThresholdCount: 5
-      Matcher:
-        HttpCode: '200'
-      Name: EC2TargetGroup
-      Port: 80
-      Protocol: HTTP
-      TargetGroupAttributes:
-      - Key: deregistration_delay.timeout_seconds
-        Value: '20'
-      UnhealthyThresholdCount: 3
-      VpcId: !Ref VPC
-
-  AlbListener:
-    Type: AWS::ElasticLoadBalancingV2::Listener
-    Properties:
-      DefaultActions:
-        - Type: forward
-          TargetGroupArn: !Ref EC2TargetGroup
-      LoadBalancerArn: !Ref ApplicationLoadBalancer
-      Port: 80
-      Protocol: HTTP
-
-
-# MARK: Ec2 Pre-config
-  Ec2KeyPair:
-    Type: 'AWS::EC2::KeyPair'
-    Properties:
-      KeyName: !Sub ${EnvironmentName}-ec2-keypair
-
-  EC2Role: 
-    Type: "AWS::IAM::InstanceProfile"
-    Properties: 
-      Path: "/"
-      Roles: 
-        - !Ref Ec2RoleName
-
-
-# MARK: Bastion
-  BastionSg:
-    Type: AWS::EC2::SecurityGroup
-    DependsOn: VPC
-    Properties:
-      GroupDescription: SG to test ping
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 119.237.240.242/32
-
-  BastionHostInstance: 
-    Type: AWS::EC2::Instance
-    Properties: 
-      ImageId: "ami-0b72821e2f351e396"
-      KeyName: !Ref Ec2KeyPair
-      InstanceType: t3.micro
-      IamInstanceProfile: !Ref EC2Role
-      UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash
-          yum update -y
-          sudo su
-          cd /root
-          yum update -y
-          yum install -y docker
-          service docker start
-          usermod -a -G docker ec2-user
-          curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
-          chmod +x /usr/local/bin/docker-compose
-          wget https://dev.mysql.com/get/mysql80-community-release-el9-1.noarch.rpm
-          dnf install mysql80-community-release-el9-1.noarch.rpm -y
-          rpm --import https://repo.mysql.com/RPM-GPG-KEY-mysql-2023
-          dnf install mysql-community-client -y
-          rm -f mysql80-community-release-el9-1.noarch.rpm
-          yum install libxcrypt-compat -y
-
-      NetworkInterfaces: 
-        - AssociatePublicIpAddress: "true"
-          DeviceIndex: "0"
-          GroupSet: 
-            - !Ref BastionSg 
-          SubnetId: !Ref PublicSubnet1
-      Tags:
-        - Key: Name
-          Value: bastion
-
-#  MARK: AutoScaling Group
-  ApplicationSg:
-    Type: AWS::EC2::SecurityGroup
-    DependsOn: VPC
-    Properties:
-      GroupDescription: applciation
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp: !Ref VpcCIDR
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: !Ref VpcCIDR
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: !Ref VpcCIDR
-
-  ALBRequestCountHighAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmDescription: Alarm if ALB request count exceeds 5
-      Namespace: AWS/ApplicationELB
-      MetricName: RequestCount
-      Dimensions:
-        - Name: LoadBalancer
-          Value: !GetAtt ApplicationLoadBalancer.LoadBalancerFullName
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 5
-      ComparisonOperator: GreaterThanThreshold
-      AlarmActions:
-        - !Ref ScaleUpPolicy
-
-  ALBRequestCountLowAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmDescription: Alarm if ALB request count is less than or equal to 2
-      Namespace: AWS/ApplicationELB
-      MetricName: RequestCount
-      Dimensions:
-        - Name: LoadBalancer
-          Value: !GetAtt ApplicationLoadBalancer.LoadBalancerFullName
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 5
-      Threshold: 2
-      ComparisonOperator: LessThanOrEqualToThreshold
-      AlarmActions:
-        - !Ref ScaleDownPolicy
-
-  ScaleUpPolicy:
-    Type: AWS::AutoScaling::ScalingPolicy
-    Properties:
-      AdjustmentType: ChangeInCapacity
-      AutoScalingGroupName: !Ref applicationAsg
-      Cooldown: 300
-      ScalingAdjustment: 1
-
-  ScaleDownPolicy:
-    Type: AWS::AutoScaling::ScalingPolicy
-    Properties:
-      AdjustmentType: ChangeInCapacity
-      AutoScalingGroupName: !Ref applicationAsg
-      Cooldown: 300
-      ScalingAdjustment: -1
-
-#  MARK: LaunchTemplate
-  applicationLaunchTemplate:
-    Type: AWS::EC2::LaunchTemplate
-    Properties: 
-      LaunchTemplateName: applicationLaunchTemplate
-      LaunchTemplateData:
-        ImageId: "ami-0b72821e2f351e396"
-        KeyName: !Ref Ec2KeyPair
-        InstanceType: t3.micro
-        TagSpecifications:
-          - ResourceType: "instance"
-            Tags:
-            - Key: "Name"
-              Value: "Application"
-            - Key: "Environment"
-              Value: !Ref EnvironmentName
-        UserData:
-          Fn::Base64: !Sub |
-             #!/bin/bash
-             yum update -y
-             cd /root
-             wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
-             aws s3 cp s3://kcwan-lab-608671652196/gameday/ws-ec2-pipeline-server .
-             chmod 700 ws-ec2-pipeline-server
-             ./ws-ec2-pipeline-server
-        IamInstanceProfile:
-          Arn: !GetAtt EC2Role.Arn
-        NetworkInterfaces: 
-          - AssociatePublicIpAddress: "false"
-            DeviceIndex: "0"
-            Groups: 
-              # - !Ref BastionSg
-              - !Ref ApplicationSg
-
-  applicationAsg:
-    Type: AWS::AutoScaling::AutoScalingGroup
-    Properties:
-      LaunchTemplate:
-        LaunchTemplateId: !Ref applicationLaunchTemplate
-        Version: !GetAtt applicationLaunchTemplate.LatestVersionNumber
-      MaxSize: '5'
-      MinSize: '1'
-      DesiredCapacity: '1'
-      MetricsCollection: 
-        - Granularity: 1Minute
-          Metrics: 
-            - GroupMinSize
-            - GroupMaxSize
-            - GroupDesiredCapacity
-            - GroupInServiceInstances
-      TargetGroupARNs:
-        - !Ref EC2TargetGroup
-      VPCZoneIdentifier:   
-        - !Ref PrivateSubnet1
-        - !Ref PrivateSubnet2
-
-# MARK: EFS
-  # FileSystemSg:
-  #   Type: AWS::EC2::SecurityGroup
-  #   DependsOn: VPC
-  #   Properties:
-  #     GroupDescription: efs
-  #     VpcId: !Ref VPC
-  #     SecurityGroupIngress:
-  #       - IpProtocol: tcp
-  #         FromPort: 2049
-  #         ToPort: 2049
-  #         SourceSecurityGroupId: !Ref ApplicationSg
-
-  # FileSystemResource:
-  #   Type: 'AWS::EFS::FileSystem'
-  #   Properties:
-  #     # AvailabilityZoneName: us-east-1a
-  #     BackupPolicy:
-  #       Status: ENABLED
-  #     Encrypted: true
-  #     LifecyclePolicies:
-  #       - TransitionToIA: AFTER_30_DAYS
-  #       - TransitionToPrimaryStorageClass: AFTER_1_ACCESS
-  #     FileSystemTags:
-  #       - Key: Name
-  #         Value: !Ref EnvironmentName
-  #     FileSystemPolicy:
-  #       Version: "2012-10-17"
-  #       Statement:
-  #         - Effect: "Allow"
-  #           Action:
-  #             - "elasticfilesystem:ClientRootAccess"
-  #             - "elasticfilesystem:ClientWrite"
-  #             - "elasticfilesystem:ClientMount"
-  #           Principal:
-  #             AWS: '*'
-  #           Condition:
-  #             Bool:
-  #               "elasticfilesystem:AccessedViaMountTarget": "true"
-  # EfsMountTargetResource1:
-  #   Type: AWS::EFS::MountTarget
-  #   Properties:
-  #     FileSystemId: !Ref FileSystemResource
-  #     SubnetId: !Ref PrivateSubnet1
-  #     SecurityGroups:
-  #     - !Ref FileSystemSg
-
-  # EfsMountTargetResource2:
-  #   Type: AWS::EFS::MountTarget
-  #   Properties:
-  #     FileSystemId: !Ref FileSystemResource
-  #     SubnetId: !Ref PrivateSubnet2
-  #     SecurityGroups:
-  #     - !Ref FileSystemSg
-
-
-# MARK: DynamoDB
-  DDBTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      AttributeDefinitions:
-        - AttributeName: "id"
-          AttributeType: "S"
-      KeySchema:
-        - AttributeName: "id"
-          KeyType: "HASH"
-      ProvisionedThroughput:
-        ReadCapacityUnits: 5
-        WriteCapacityUnits: 5
-
-
-# MARK: SecretManager
-  SecretsManagerVPCEndpoint:
-    Type: AWS::EC2::VPCEndpoint
-    Properties:
-      SubnetIds:
-        - !Ref PrivateSubnet1
-        - !Ref PrivateSubnet2
-        # - !Ref IsolatedSubnet1
-        # - !Ref IsolatedSubnet2
-      SecurityGroupIds:
-        - !Ref ApplicationSg
-        - !Ref BastionSg
-      VpcEndpointType: Interface
-      ServiceName: !Sub com.amazonaws.${AWS::Region}.secretsmanager
-      PrivateDnsEnabled: true
-      VpcId: !Ref VPC
-
-  DocDBClusterRotationSecret:
-    Type: AWS::SecretsManager::Secret
-    Properties:
-      GenerateSecretString:
-        SecretStringTemplate: '{"username": "adminuser","ssl": true}'
-        GenerateStringKey: password
-        PasswordLength: 16
-        ExcludePunctuation: true    
-      Tags:
-        - Key: AppName
-          Value: !Ref EnvironmentName
-
-# MySecretRotationSchedule:
-#   Type: AWS::SecretsManager::RotationSchedule
-#   DependsOn: SecretDocDBClusterAttachment
-#   Properties:
-#     SecretId: !Ref MyDocDBClusterRotationSecret
-#     HostedRotationLambda:
-#       RotationType: MongoDBSingleUser
-#       RotationLambdaName: MongoDBSingleUser
-#       VpcSecurityGroupIds: !GetAtt TestVPC.DefaultSecurityGroup
-#       VpcSubnetIds: !Join
-#         - ','
-#         - - !Ref TestSubnet01
-#           - !Ref TestSubnet02
-#     RotationRules:
-#       Duration: 2h
-#       ScheduleExpression: cron(0 8 1 * ? *)
-
-
-#MARK: Redis
-  RedisDbSg:
-    Type: AWS::EC2::SecurityGroup
-    DependsOn: VPC
-    Properties:
-      GroupDescription: Redis
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 6379
-          ToPort: 6379
-          CidrIp: !Ref VpcCIDR
-
-  RedisSubnetGroup:
-    Type: AWS::MemoryDB::SubnetGroup
-    Properties:
-      Description: 'isolated-subnet-redis'
-      SubnetGroupName: 'isolated-subnet-redis'
-      SubnetIds:
-        - !Ref IsolatedSubnet1
-        - !Ref IsolatedSubnet2
-
-  Redis:
-    Type: AWS::MemoryDB::Cluster
-    Properties:
-      ACLName: open-access
-      ClusterName: !Sub ${EnvironmentName}-redis
-      NodeType: db.t4g.small
-      SecurityGroupIds:
-        - !Ref RedisDbSg
-      SubnetGroupName: !Ref RedisSubnetGroup
-      Tags:
-        - Key: environment
-          Value: production
-
-
-#MARK: RDS
-  RdsDbSubnetGroup:
-    Type: AWS::RDS::DBSubnetGroup
-    Properties:
-      DBSubnetGroupDescription: 'isolated-subnet-rds'
-      SubnetIds:
-        - !Ref IsolatedSubnet1
-        - !Ref IsolatedSubnet2
-
-  RdsDbSg:
-    Type: AWS::EC2::SecurityGroup
-    DependsOn: VPC
-    Properties:
-      GroupDescription: RDS
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 3306
-          ToPort: 3306
-          CidrIp: !Ref VpcCIDR
-
-  RdsDbCluster:
-    Type: "AWS::RDS::DBInstance"
-    Properties:
-      MasterUsername: "masteruser"
-      DBInstanceClass: "db.t3.micro"
-      Engine: "mysql"
-      AllocatedStorage: 5
-      AutoMinorVersionUpgrade: false
-      ManageMasterUserPassword: true
-      DBSubnetGroupName: !Ref RdsDbSubnetGroup
-      VPCSecurityGroups:
-        - !Ref RdsDbSg      
-
-# MARK: DocumentDB
-  DatabaseSg:
-    Type: AWS::EC2::SecurityGroup
-    DependsOn: VPC
-    Properties:
-      GroupDescription: Connection for application
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 27017
-          ToPort: 27017
-          CidrIp: !Ref VpcCIDR
-
-  DBPrivateSubnetGroup:
-    Type: AWS::DocDB::DBSubnetGroup
-    Properties:
-      DBSubnetGroupDescription: 'private-subnet'
-      SubnetIds:
-        - !Ref PrivateSubnet1
-        - !Ref PrivateSubnet2
-
-  DocDBCluster:
-    Type: AWS::DocDB::DBCluster
-    Properties:
-      DBSubnetGroupName: !Ref DBPrivateSubnetGroup
-      MasterUsername: !Sub '{{resolve:secretsmanager:${DocDBClusterRotationSecret}::username}}'
-      MasterUserPassword: !Sub '{{resolve:secretsmanager:${DocDBClusterRotationSecret}::password}}'
-      VpcSecurityGroupIds:
-        - !Ref DatabaseSg
-
-  DocDBInstance:
-    Type: AWS::DocDB::DBInstance
-    Properties:
-      DBClusterIdentifier: !Ref DocDBCluster
-      DBInstanceClass: db.t3.medium
-
-  DBIsolatedSubnetGroup:
-    Type: AWS::DocDB::DBSubnetGroup
-    Properties:
-      DBSubnetGroupDescription: 'isolated-subnet'
-      SubnetIds:
-        - !Ref IsolatedSubnet1
-        - !Ref IsolatedSubnet2
-
-  SecretDocDBClusterAttachment:
-    Type: AWS::SecretsManager::SecretTargetAttachment
-    Properties:
-      SecretId: !Ref DocDBClusterRotationSecret
-      TargetId: !Ref DocDBCluster
-      TargetType: AWS::DocDB::DBCluster
-
-
-# MARK: ECR
-  RootEcrRepo: 
-    Type: AWS::ECR::Repository
-    Properties: 
-      RepositoryName: "root-repository"
-      EncryptionConfiguration:
-        EncryptionType: AES256
-      ImageTagMutability: IMMUTABLE
-      ImageScanningConfiguration: 
-        ScanOnPush: true
-
-  StubEcrRepo: 
-    Type: AWS::ECR::Repository
-    Properties: 
-      RepositoryName: "stub-repository"
-      EncryptionConfiguration:
-        EncryptionType: AES256
-      ImageTagMutability: IMMUTABLE
-      ImageScanningConfiguration: 
-        ScanOnPush: true
-
-
-# MARK: ECS
-  ECSCluster:
-    Type: AWS::ECS::Cluster
-    Properties:
-      ClusterName: !Ref EnvironmentName
-      ClusterSettings:
-        - Name: containerInsights
-          Value: enabled
-      Tags:
-        - Key: environment
-          Value: production
-
-
-# MARK: EKS
-  # EKSClusterRole:
-  #   Type: AWS::IAM::Role
-  #   Properties:
-  #     AssumeRolePolicyDocument:
-  #       Version: "2012-10-17"
-  #       Statement:
-  #         - Effect: "Allow"
-  #           Principal:
-  #             Service:
-  #               - eks.amazonaws.com
-  #           Action:
-  #             - "sts:AssumeRole"
-  #     Path: "/"
-  #     ManagedPolicyArns:
-  #       - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
-  #       - arn:aws:iam::aws:policy/AmazonEKSServicePolicy
-
-  # EKSNodeGroupRole:
-  #   Type: AWS::IAM::Role
-  #   Properties:
-  #     AssumeRolePolicyDocument:
-  #       Version: "2012-10-17"
-  #       Statement:
-  #         - Effect: "Allow"
-  #           Principal:
-  #             Service:
-  #               - ec2.amazonaws.com
-  #           Action:
-  #             - "sts:AssumeRole"
-  #     Path: "/"
-  #     ManagedPolicyArns:
-  #       - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
-  #       - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
-  #       - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
-
-  # EKSCluster:
-  #   Type: AWS::EKS::Cluster
-  #   Properties:
-  #     Name: !Sub ${EnvironmentName}-Cluster
-  #     Version: "1.30"
-  #     RoleArn: !GetAtt EKSClusterRole.Arn
-  #     AccessConfig:
-  #       AuthenticationMode: API_AND_CONFIG_MAP
-  #       # BootstrapClusterCreatorAdminPermissions: false
-  #     ResourcesVpcConfig:
-  #       SecurityGroupIds:
-  #         - !Ref ApplicationSg
-  #       SubnetIds:
-  #         - !Ref PrivateSubnet1
-  #         - !Ref PrivateSubnet2
-  #       EndpointPublicAccess: true
-  #       EndpointPrivateAccess: true
-  #     Logging:
-  #       ClusterLogging:
-  #         EnabledTypes:
-  #           - Type: api
-  #           - Type: audit
-
-  # EKSNodegroup:
-  #   Type: 'AWS::EKS::Nodegroup'
-  #   Properties:
-  #     ClusterName: !Ref EKSCluster
-  #     NodeRole: !GetAtt EKSNodeGroupRole.Arn
-  #     CapacityType: ON_DEMAND
-  #     InstanceTypes:
-  #       - t3.medium
-  #     Labels:
-  #       Name: Application
-  #     ScalingConfig:
-  #       MinSize: 1
-  #       DesiredSize: 1
-  #       MaxSize: 1
-  #     Subnets:
-  #       - !Ref PrivateSubnet1
-  #       - !Ref PrivateSubnet2
-
-
-# MARK: App Config
-  Application:
-    Type: AWS::AppConfig::Application
-    Properties:
-      Name: !Sub ${EnvironmentName}-Application
-      Description: !Sub ${EnvironmentName}-Application
-      Tags:
-        - Key: Env
-          Value: !Ref AppConfigStage
-
-  ProdEnvironment:
-    Type: AWS::AppConfig::Environment
-    Properties:
-      ApplicationId: !Ref Application
-      Name: !Ref AppConfigStage
-      Description: !Ref AppConfigStage
-      Tags:
-        - Key: Env
-          Value: !Ref AppConfigStage
-
-  ConfigurationProfile:
-    Type: AWS::AppConfig::ConfigurationProfile
-    Properties:
-      ApplicationId: !Ref Application
-      Name: !Sub ${EnvironmentName}-ConfigurationProfile
-      Description: !Sub ${EnvironmentName}-ConfigurationProfile
-      LocationUri: hosted
-      Tags:
-        - Key: Env
-          Value: !Ref AppConfigStage
-
-  HostedConfigurationVersion:
-    Type: AWS::AppConfig::HostedConfigurationVersion
-    Properties:
-      ApplicationId: !Ref Application
-      ConfigurationProfileId: !Ref ConfigurationProfile
-      Description: ' configuration prod value'
-      Content: !Sub |
-        {
-        "DBSeretARN" : "${DocDBClusterRotationSecret}",
-        "MongoDbDatabase" : "unicorndb",
-        "MongoDbCollection" : "unicorncollection",
-        "MongoDbCAFilePath" : "./global-bundle.pem",
-        "Port": 80,
-        "Bucket": "${ApplcationBucket}",
-        "ApiGatewayUrl" : "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com"
-        }
-      ContentType: 'application/json'
-
-
-  DeploymentStrategy:
-    Type: AWS::AppConfig::DeploymentStrategy
-    Properties:
-      Name: "Unicorn DeploymentStrategy"
-      Description: "deployment strategy."
-      DeploymentDurationInMinutes: 0
-      FinalBakeTimeInMinutes: 0
-      GrowthFactor: 100
-      GrowthType: LINEAR
-      ReplicateTo: NONE
-      Tags:
-        - Key: Env
-          Value: !Ref AppConfigStage
-
-  # appConfigDeployment:
-  #   DependsOn: ConfigurationProfile
-  #   Type: AWS::AppConfig::Deployment
-  #   Properties:
-  #     ApplicationId: !Ref Application
-  #     EnvironmentId: !Ref ProdEnvironment
-  #     DeploymentStrategyId: !Ref DeploymentStrategy
-  #     ConfigurationProfileId: !Ref ConfigurationProfile
-  #     ConfigurationVersion: '3'
-  #     Description: !Sub ${EnvironmentName}-Deployment
-  #     Tags:
-  #       - Key: Env
-  #         Value: !Ref AppConfigStage
-
-
-# MARK: Output
-Outputs:
-  VPC:
-    Description: A reference to the created VPC
-    Value: !Ref VPC
-
-  PublicSubnet1:
-    Description: A reference to the public subnet in the 1st Availability Zone
-    Value: !Ref PublicSubnet1
-
-  PublicSubnet2:
-    Description: A reference to the public subnet in the 2nd Availability Zone
-    Value: !Ref PublicSubnet2
-
-  PrivateSubnet1:
-    Description: A reference to the private subnet in the 1st Availability Zone
-    Value: !Ref PrivateSubnet1
-
-  PrivateSubnet2:
-    Description: A reference to the private subnet in the 2nd Availability Zone
-    Value: !Ref PrivateSubnet2
-
-  IsolatedSubnet1:
-    Description: A reference to the Isolated subnet in the 1st Availability Zone
-    Value: !Ref IsolatedSubnet1
-
-  IsolatedSubnet2:
-    Description: A reference to the Isolated subnet in the 2nd Availability Zone
-    Value: !Ref IsolatedSubnet2
-
-  BastionHostInstance:
-    Description: Pulbic IP
-    Value: !GetAtt BastionHostInstance.PublicIp
-
-  LamdbaArn:
-    Description: A reference to the Isolated subnet in the 2nd Availability Zone
-    Value: !GetAtt  LambdaFunction.Arn
-
-  # ApiGatewayUrl:
-  #   Description: URL of the API Gateway
-  #   Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+#   AlbLogS3BucketPolicy:
+#     Type: AWS::S3::BucketPolicy
+#     Properties:
+#       Bucket: !Ref AlbLogS3Bucket
+#       PolicyDocument:
+#         Version: '2012-10-17'
+#         Statement:
+#           - Action:
+#               - 's3:PutObject'
+#             Effect: Allow
+#             Resource: 
+#               - !Sub "arn:aws:s3:::${AlbLogS3Bucket}"
+#               - !Sub "arn:aws:s3:::${AlbLogS3Bucket}/*"
+#             Principal: 
+#               AWS: 'arn:aws:iam::127311923021:root'
+
+# # MARK: ALB
+#   AlbSecurityGroup:
+#     Type: AWS::EC2::SecurityGroup
+#     Properties:
+#       GroupDescription: ALB Security Group
+#       VpcId: !Ref VPC
+#       SecurityGroupIngress:
+#       - IpProtocol: tcp
+#         FromPort: 80
+#         ToPort: 80
+#         CidrIp: 0.0.0.0/0
+
+#   ApplicationLoadBalancer:
+#     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+#     Properties:
+#       Scheme: internet-facing
+#       Subnets: 
+#         - !Ref PublicSubnet1
+#         - !Ref PublicSubnet2
+#       SecurityGroups:
+#         - !GetAtt AlbSecurityGroup.GroupId
+#       LoadBalancerAttributes:
+#         - Key: access_logs.s3.enabled
+#           Value: 'true'
+#         - Key: access_logs.s3.bucket
+#           Value: !Ref AlbLogS3Bucket
+#         - Key: access_logs.s3.prefix
+#           Value: 'alb-logs'
+
+#   EC2TargetGroup:
+#     Type: AWS::ElasticLoadBalancingV2::TargetGroup
+#     Properties:
+#       HealthCheckIntervalSeconds: 30
+#       HealthCheckProtocol: HTTP
+#       HealthCheckTimeoutSeconds: 15
+#       HealthyThresholdCount: 5
+#       Matcher:
+#         HttpCode: '200'
+#       Name: EC2TargetGroup
+#       Port: 80
+#       Protocol: HTTP
+#       TargetGroupAttributes:
+#       - Key: deregistration_delay.timeout_seconds
+#         Value: '20'
+#       UnhealthyThresholdCount: 3
+#       VpcId: !Ref VPC
+
+#   AlbListener:
+#     Type: AWS::ElasticLoadBalancingV2::Listener
+#     Properties:
+#       DefaultActions:
+#         - Type: forward
+#           TargetGroupArn: !Ref EC2TargetGroup
+#       LoadBalancerArn: !Ref ApplicationLoadBalancer
+#       Port: 80
+#       Protocol: HTTP
+
+
+# # MARK: Ec2 Pre-config
+#   Ec2KeyPair:
+#     Type: 'AWS::EC2::KeyPair'
+#     Properties:
+#       KeyName: !Sub ${EnvironmentName}-ec2-keypair
+
+#   EC2Role: 
+#     Type: "AWS::IAM::InstanceProfile"
+#     Properties: 
+#       Path: "/"
+#       Roles: 
+#         - !Ref Ec2RoleName
+
+
+# # MARK: Bastion
+#   BastionSg:
+#     Type: AWS::EC2::SecurityGroup
+#     DependsOn: VPC
+#     Properties:
+#       GroupDescription: SG to test ping
+#       VpcId: !Ref VPC
+#       SecurityGroupIngress:
+#         - IpProtocol: tcp
+#           FromPort: 22
+#           ToPort: 22
+#           CidrIp: 119.237.240.242/32
+
+#   BastionHostInstance: 
+#     Type: AWS::EC2::Instance
+#     Properties: 
+#       ImageId: "ami-0b72821e2f351e396"
+#       KeyName: !Ref Ec2KeyPair
+#       InstanceType: t3.micro
+#       IamInstanceProfile: !Ref EC2Role
+#       UserData:
+#         Fn::Base64: !Sub |
+#           #!/bin/bash
+#           yum update -y
+#           sudo su
+#           cd /root
+#           yum update -y
+#           yum install -y docker
+#           service docker start
+#           usermod -a -G docker ec2-user
+#           curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+#           chmod +x /usr/local/bin/docker-compose
+#           wget https://dev.mysql.com/get/mysql80-community-release-el9-1.noarch.rpm
+#           dnf install mysql80-community-release-el9-1.noarch.rpm -y
+#           rpm --import https://repo.mysql.com/RPM-GPG-KEY-mysql-2023
+#           dnf install mysql-community-client -y
+#           rm -f mysql80-community-release-el9-1.noarch.rpm
+#           yum install libxcrypt-compat -y
+
+#       NetworkInterfaces: 
+#         - AssociatePublicIpAddress: "true"
+#           DeviceIndex: "0"
+#           GroupSet: 
+#             - !Ref BastionSg 
+#           SubnetId: !Ref PublicSubnet1
+#       Tags:
+#         - Key: Name
+#           Value: bastion
+
+# #  MARK: AutoScaling Group
+#   ApplicationSg:
+#     Type: AWS::EC2::SecurityGroup
+#     DependsOn: VPC
+#     Properties:
+#       GroupDescription: applciation
+#       VpcId: !Ref VPC
+#       SecurityGroupIngress:
+#         - IpProtocol: tcp
+#           FromPort: 80
+#           ToPort: 80
+#           CidrIp: !Ref VpcCIDR
+#         - IpProtocol: tcp
+#           FromPort: 443
+#           ToPort: 443
+#           CidrIp: !Ref VpcCIDR
+#         - IpProtocol: tcp
+#           FromPort: 22
+#           ToPort: 22
+#           CidrIp: !Ref VpcCIDR
+
+#   ALBRequestCountHighAlarm:
+#     Type: AWS::CloudWatch::Alarm
+#     Properties:
+#       AlarmDescription: Alarm if ALB request count exceeds 5
+#       Namespace: AWS/ApplicationELB
+#       MetricName: RequestCount
+#       Dimensions:
+#         - Name: LoadBalancer
+#           Value: !GetAtt ApplicationLoadBalancer.LoadBalancerFullName
+#       Statistic: Sum
+#       Period: 60
+#       EvaluationPeriods: 1
+#       Threshold: 5
+#       ComparisonOperator: GreaterThanThreshold
+#       AlarmActions:
+#         - !Ref ScaleUpPolicy
+
+#   ALBRequestCountLowAlarm:
+#     Type: AWS::CloudWatch::Alarm
+#     Properties:
+#       AlarmDescription: Alarm if ALB request count is less than or equal to 2
+#       Namespace: AWS/ApplicationELB
+#       MetricName: RequestCount
+#       Dimensions:
+#         - Name: LoadBalancer
+#           Value: !GetAtt ApplicationLoadBalancer.LoadBalancerFullName
+#       Statistic: Sum
+#       Period: 60
+#       EvaluationPeriods: 5
+#       Threshold: 2
+#       ComparisonOperator: LessThanOrEqualToThreshold
+#       AlarmActions:
+#         - !Ref ScaleDownPolicy
+
+#   ScaleUpPolicy:
+#     Type: AWS::AutoScaling::ScalingPolicy
+#     Properties:
+#       AdjustmentType: ChangeInCapacity
+#       AutoScalingGroupName: !Ref applicationAsg
+#       Cooldown: 300
+#       ScalingAdjustment: 1
+
+#   ScaleDownPolicy:
+#     Type: AWS::AutoScaling::ScalingPolicy
+#     Properties:
+#       AdjustmentType: ChangeInCapacity
+#       AutoScalingGroupName: !Ref applicationAsg
+#       Cooldown: 300
+#       ScalingAdjustment: -1
+
+# #  MARK: LaunchTemplate
+#   applicationLaunchTemplate:
+#     Type: AWS::EC2::LaunchTemplate
+#     Properties: 
+#       LaunchTemplateName: applicationLaunchTemplate
+#       LaunchTemplateData:
+#         ImageId: "ami-0b72821e2f351e396"
+#         KeyName: !Ref Ec2KeyPair
+#         InstanceType: t3.micro
+#         TagSpecifications:
+#           - ResourceType: "instance"
+#             Tags:
+#             - Key: "Name"
+#               Value: "Application"
+#             - Key: "Environment"
+#               Value: !Ref EnvironmentName
+#         UserData:
+#           Fn::Base64: !Sub |
+#              #!/bin/bash
+#              yum update -y
+#              cd /root
+#              wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+#              aws s3 cp s3://kcwan-lab-608671652196/gameday/ws-ec2-pipeline-server .
+#              chmod 700 ws-ec2-pipeline-server
+#              ./ws-ec2-pipeline-server
+#         IamInstanceProfile:
+#           Arn: !GetAtt EC2Role.Arn
+#         NetworkInterfaces: 
+#           - AssociatePublicIpAddress: "false"
+#             DeviceIndex: "0"
+#             Groups: 
+#               # - !Ref BastionSg
+#               - !Ref ApplicationSg
+
+#   applicationAsg:
+#     Type: AWS::AutoScaling::AutoScalingGroup
+#     Properties:
+#       LaunchTemplate:
+#         LaunchTemplateId: !Ref applicationLaunchTemplate
+#         Version: !GetAtt applicationLaunchTemplate.LatestVersionNumber
+#       MaxSize: '5'
+#       MinSize: '1'
+#       DesiredCapacity: '1'
+#       MetricsCollection: 
+#         - Granularity: 1Minute
+#           Metrics: 
+#             - GroupMinSize
+#             - GroupMaxSize
+#             - GroupDesiredCapacity
+#             - GroupInServiceInstances
+#       TargetGroupARNs:
+#         - !Ref EC2TargetGroup
+#       VPCZoneIdentifier:   
+#         - !Ref PrivateSubnet1
+#         - !Ref PrivateSubnet2
+
+# # MARK: EFS
+#   # FileSystemSg:
+#   #   Type: AWS::EC2::SecurityGroup
+#   #   DependsOn: VPC
+#   #   Properties:
+#   #     GroupDescription: efs
+#   #     VpcId: !Ref VPC
+#   #     SecurityGroupIngress:
+#   #       - IpProtocol: tcp
+#   #         FromPort: 2049
+#   #         ToPort: 2049
+#   #         SourceSecurityGroupId: !Ref ApplicationSg
+
+#   # FileSystemResource:
+#   #   Type: 'AWS::EFS::FileSystem'
+#   #   Properties:
+#   #     # AvailabilityZoneName: us-east-1a
+#   #     BackupPolicy:
+#   #       Status: ENABLED
+#   #     Encrypted: true
+#   #     LifecyclePolicies:
+#   #       - TransitionToIA: AFTER_30_DAYS
+#   #       - TransitionToPrimaryStorageClass: AFTER_1_ACCESS
+#   #     FileSystemTags:
+#   #       - Key: Name
+#   #         Value: !Ref EnvironmentName
+#   #     FileSystemPolicy:
+#   #       Version: "2012-10-17"
+#   #       Statement:
+#   #         - Effect: "Allow"
+#   #           Action:
+#   #             - "elasticfilesystem:ClientRootAccess"
+#   #             - "elasticfilesystem:ClientWrite"
+#   #             - "elasticfilesystem:ClientMount"
+#   #           Principal:
+#   #             AWS: '*'
+#   #           Condition:
+#   #             Bool:
+#   #               "elasticfilesystem:AccessedViaMountTarget": "true"
+#   # EfsMountTargetResource1:
+#   #   Type: AWS::EFS::MountTarget
+#   #   Properties:
+#   #     FileSystemId: !Ref FileSystemResource
+#   #     SubnetId: !Ref PrivateSubnet1
+#   #     SecurityGroups:
+#   #     - !Ref FileSystemSg
+
+#   # EfsMountTargetResource2:
+#   #   Type: AWS::EFS::MountTarget
+#   #   Properties:
+#   #     FileSystemId: !Ref FileSystemResource
+#   #     SubnetId: !Ref PrivateSubnet2
+#   #     SecurityGroups:
+#   #     - !Ref FileSystemSg
+
+
+# # MARK: DynamoDB
+#   DDBTable:
+#     Type: AWS::DynamoDB::Table
+#     Properties:
+#       AttributeDefinitions:
+#         - AttributeName: "id"
+#           AttributeType: "S"
+#       KeySchema:
+#         - AttributeName: "id"
+#           KeyType: "HASH"
+#       ProvisionedThroughput:
+#         ReadCapacityUnits: 5
+#         WriteCapacityUnits: 5
+
+
+# # MARK: SecretManager
+#   SecretsManagerVPCEndpoint:
+#     Type: AWS::EC2::VPCEndpoint
+#     Properties:
+#       SubnetIds:
+#         - !Ref PrivateSubnet1
+#         - !Ref PrivateSubnet2
+#         # - !Ref IsolatedSubnet1
+#         # - !Ref IsolatedSubnet2
+#       SecurityGroupIds:
+#         - !Ref ApplicationSg
+#         - !Ref BastionSg
+#       VpcEndpointType: Interface
+#       ServiceName: !Sub com.amazonaws.${AWS::Region}.secretsmanager
+#       PrivateDnsEnabled: true
+#       VpcId: !Ref VPC
+
+#   DocDBClusterRotationSecret:
+#     Type: AWS::SecretsManager::Secret
+#     Properties:
+#       GenerateSecretString:
+#         SecretStringTemplate: '{"username": "adminuser","ssl": true}'
+#         GenerateStringKey: password
+#         PasswordLength: 16
+#         ExcludePunctuation: true    
+#       Tags:
+#         - Key: AppName
+#           Value: !Ref EnvironmentName
+
+# # MySecretRotationSchedule:
+# #   Type: AWS::SecretsManager::RotationSchedule
+# #   DependsOn: SecretDocDBClusterAttachment
+# #   Properties:
+# #     SecretId: !Ref MyDocDBClusterRotationSecret
+# #     HostedRotationLambda:
+# #       RotationType: MongoDBSingleUser
+# #       RotationLambdaName: MongoDBSingleUser
+# #       VpcSecurityGroupIds: !GetAtt TestVPC.DefaultSecurityGroup
+# #       VpcSubnetIds: !Join
+# #         - ','
+# #         - - !Ref TestSubnet01
+# #           - !Ref TestSubnet02
+# #     RotationRules:
+# #       Duration: 2h
+# #       ScheduleExpression: cron(0 8 1 * ? *)
+
+
+# #MARK: Redis
+#   RedisDbSg:
+#     Type: AWS::EC2::SecurityGroup
+#     DependsOn: VPC
+#     Properties:
+#       GroupDescription: Redis
+#       VpcId: !Ref VPC
+#       SecurityGroupIngress:
+#         - IpProtocol: tcp
+#           FromPort: 6379
+#           ToPort: 6379
+#           CidrIp: !Ref VpcCIDR
+
+#   RedisSubnetGroup:
+#     Type: AWS::MemoryDB::SubnetGroup
+#     Properties:
+#       Description: 'isolated-subnet-redis'
+#       SubnetGroupName: 'isolated-subnet-redis'
+#       SubnetIds:
+#         - !Ref IsolatedSubnet1
+#         - !Ref IsolatedSubnet2
+
+#   Redis:
+#     Type: AWS::MemoryDB::Cluster
+#     Properties:
+#       ACLName: open-access
+#       ClusterName: !Sub ${EnvironmentName}-redis
+#       NodeType: db.t4g.small
+#       SecurityGroupIds:
+#         - !Ref RedisDbSg
+#       SubnetGroupName: !Ref RedisSubnetGroup
+#       Tags:
+#         - Key: environment
+#           Value: production
+
+
+# #MARK: RDS
+#   RdsDbSubnetGroup:
+#     Type: AWS::RDS::DBSubnetGroup
+#     Properties:
+#       DBSubnetGroupDescription: 'isolated-subnet-rds'
+#       SubnetIds:
+#         - !Ref IsolatedSubnet1
+#         - !Ref IsolatedSubnet2
+
+#   RdsDbSg:
+#     Type: AWS::EC2::SecurityGroup
+#     DependsOn: VPC
+#     Properties:
+#       GroupDescription: RDS
+#       VpcId: !Ref VPC
+#       SecurityGroupIngress:
+#         - IpProtocol: tcp
+#           FromPort: 3306
+#           ToPort: 3306
+#           CidrIp: !Ref VpcCIDR
+
+#   RdsDbCluster:
+#     Type: "AWS::RDS::DBInstance"
+#     Properties:
+#       MasterUsername: "masteruser"
+#       DBInstanceClass: "db.t3.micro"
+#       Engine: "mysql"
+#       AllocatedStorage: 5
+#       AutoMinorVersionUpgrade: false
+#       ManageMasterUserPassword: true
+#       DBSubnetGroupName: !Ref RdsDbSubnetGroup
+#       VPCSecurityGroups:
+#         - !Ref RdsDbSg      
+
+# # MARK: DocumentDB
+#   DatabaseSg:
+#     Type: AWS::EC2::SecurityGroup
+#     DependsOn: VPC
+#     Properties:
+#       GroupDescription: Connection for application
+#       VpcId: !Ref VPC
+#       SecurityGroupIngress:
+#         - IpProtocol: tcp
+#           FromPort: 27017
+#           ToPort: 27017
+#           CidrIp: !Ref VpcCIDR
+
+#   DBPrivateSubnetGroup:
+#     Type: AWS::DocDB::DBSubnetGroup
+#     Properties:
+#       DBSubnetGroupDescription: 'private-subnet'
+#       SubnetIds:
+#         - !Ref PrivateSubnet1
+#         - !Ref PrivateSubnet2
+
+#   DocDBCluster:
+#     Type: AWS::DocDB::DBCluster
+#     Properties:
+#       DBSubnetGroupName: !Ref DBPrivateSubnetGroup
+#       MasterUsername: !Sub '{{resolve:secretsmanager:${DocDBClusterRotationSecret}::username}}'
+#       MasterUserPassword: !Sub '{{resolve:secretsmanager:${DocDBClusterRotationSecret}::password}}'
+#       VpcSecurityGroupIds:
+#         - !Ref DatabaseSg
+
+#   DocDBInstance:
+#     Type: AWS::DocDB::DBInstance
+#     Properties:
+#       DBClusterIdentifier: !Ref DocDBCluster
+#       DBInstanceClass: db.t3.medium
+
+#   DBIsolatedSubnetGroup:
+#     Type: AWS::DocDB::DBSubnetGroup
+#     Properties:
+#       DBSubnetGroupDescription: 'isolated-subnet'
+#       SubnetIds:
+#         - !Ref IsolatedSubnet1
+#         - !Ref IsolatedSubnet2
+
+#   SecretDocDBClusterAttachment:
+#     Type: AWS::SecretsManager::SecretTargetAttachment
+#     Properties:
+#       SecretId: !Ref DocDBClusterRotationSecret
+#       TargetId: !Ref DocDBCluster
+#       TargetType: AWS::DocDB::DBCluster
+
+
+# # MARK: ECR
+#   RootEcrRepo: 
+#     Type: AWS::ECR::Repository
+#     Properties: 
+#       RepositoryName: "root-repository"
+#       EncryptionConfiguration:
+#         EncryptionType: AES256
+#       ImageTagMutability: IMMUTABLE
+#       ImageScanningConfiguration: 
+#         ScanOnPush: true
+
+#   StubEcrRepo: 
+#     Type: AWS::ECR::Repository
+#     Properties: 
+#       RepositoryName: "stub-repository"
+#       EncryptionConfiguration:
+#         EncryptionType: AES256
+#       ImageTagMutability: IMMUTABLE
+#       ImageScanningConfiguration: 
+#         ScanOnPush: true
+
+
+# # MARK: ECS
+#   ECSCluster:
+#     Type: AWS::ECS::Cluster
+#     Properties:
+#       ClusterName: !Ref EnvironmentName
+#       ClusterSettings:
+#         - Name: containerInsights
+#           Value: enabled
+#       Tags:
+#         - Key: environment
+#           Value: production
+
+
+# # MARK: EKS
+#   # EKSClusterRole:
+#   #   Type: AWS::IAM::Role
+#   #   Properties:
+#   #     AssumeRolePolicyDocument:
+#   #       Version: "2012-10-17"
+#   #       Statement:
+#   #         - Effect: "Allow"
+#   #           Principal:
+#   #             Service:
+#   #               - eks.amazonaws.com
+#   #           Action:
+#   #             - "sts:AssumeRole"
+#   #     Path: "/"
+#   #     ManagedPolicyArns:
+#   #       - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+#   #       - arn:aws:iam::aws:policy/AmazonEKSServicePolicy
+
+#   # EKSNodeGroupRole:
+#   #   Type: AWS::IAM::Role
+#   #   Properties:
+#   #     AssumeRolePolicyDocument:
+#   #       Version: "2012-10-17"
+#   #       Statement:
+#   #         - Effect: "Allow"
+#   #           Principal:
+#   #             Service:
+#   #               - ec2.amazonaws.com
+#   #           Action:
+#   #             - "sts:AssumeRole"
+#   #     Path: "/"
+#   #     ManagedPolicyArns:
+#   #       - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+#   #       - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+#   #       - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+
+#   # EKSCluster:
+#   #   Type: AWS::EKS::Cluster
+#   #   Properties:
+#   #     Name: !Sub ${EnvironmentName}-Cluster
+#   #     Version: "1.30"
+#   #     RoleArn: !GetAtt EKSClusterRole.Arn
+#   #     AccessConfig:
+#   #       AuthenticationMode: API_AND_CONFIG_MAP
+#   #       # BootstrapClusterCreatorAdminPermissions: false
+#   #     ResourcesVpcConfig:
+#   #       SecurityGroupIds:
+#   #         - !Ref ApplicationSg
+#   #       SubnetIds:
+#   #         - !Ref PrivateSubnet1
+#   #         - !Ref PrivateSubnet2
+#   #       EndpointPublicAccess: true
+#   #       EndpointPrivateAccess: true
+#   #     Logging:
+#   #       ClusterLogging:
+#   #         EnabledTypes:
+#   #           - Type: api
+#   #           - Type: audit
+
+#   # EKSNodegroup:
+#   #   Type: 'AWS::EKS::Nodegroup'
+#   #   Properties:
+#   #     ClusterName: !Ref EKSCluster
+#   #     NodeRole: !GetAtt EKSNodeGroupRole.Arn
+#   #     CapacityType: ON_DEMAND
+#   #     InstanceTypes:
+#   #       - t3.medium
+#   #     Labels:
+#   #       Name: Application
+#   #     ScalingConfig:
+#   #       MinSize: 1
+#   #       DesiredSize: 1
+#   #       MaxSize: 1
+#   #     Subnets:
+#   #       - !Ref PrivateSubnet1
+#   #       - !Ref PrivateSubnet2
+
+
+# # MARK: App Config
+#   Application:
+#     Type: AWS::AppConfig::Application
+#     Properties:
+#       Name: !Sub ${EnvironmentName}-Application
+#       Description: !Sub ${EnvironmentName}-Application
+#       Tags:
+#         - Key: Env
+#           Value: !Ref AppConfigStage
+
+#   ProdEnvironment:
+#     Type: AWS::AppConfig::Environment
+#     Properties:
+#       ApplicationId: !Ref Application
+#       Name: !Ref AppConfigStage
+#       Description: !Ref AppConfigStage
+#       Tags:
+#         - Key: Env
+#           Value: !Ref AppConfigStage
+
+#   ConfigurationProfile:
+#     Type: AWS::AppConfig::ConfigurationProfile
+#     Properties:
+#       ApplicationId: !Ref Application
+#       Name: !Sub ${EnvironmentName}-ConfigurationProfile
+#       Description: !Sub ${EnvironmentName}-ConfigurationProfile
+#       LocationUri: hosted
+#       Tags:
+#         - Key: Env
+#           Value: !Ref AppConfigStage
+
+#   HostedConfigurationVersion:
+#     Type: AWS::AppConfig::HostedConfigurationVersion
+#     Properties:
+#       ApplicationId: !Ref Application
+#       ConfigurationProfileId: !Ref ConfigurationProfile
+#       Description: ' configuration prod value'
+#       Content: !Sub |
+#         {
+#         "DBSeretARN" : "${DocDBClusterRotationSecret}",
+#         "MongoDbDatabase" : "unicorndb",
+#         "MongoDbCollection" : "unicorncollection",
+#         "MongoDbCAFilePath" : "./global-bundle.pem",
+#         "Port": 80,
+#         "Bucket": "${ApplcationBucket}",
+#         "ApiGatewayUrl" : "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+#         }
+#       ContentType: 'application/json'
+
+
+#   DeploymentStrategy:
+#     Type: AWS::AppConfig::DeploymentStrategy
+#     Properties:
+#       Name: "Unicorn DeploymentStrategy"
+#       Description: "deployment strategy."
+#       DeploymentDurationInMinutes: 0
+#       FinalBakeTimeInMinutes: 0
+#       GrowthFactor: 100
+#       GrowthType: LINEAR
+#       ReplicateTo: NONE
+#       Tags:
+#         - Key: Env
+#           Value: !Ref AppConfigStage
+
+#   # appConfigDeployment:
+#   #   DependsOn: ConfigurationProfile
+#   #   Type: AWS::AppConfig::Deployment
+#   #   Properties:
+#   #     ApplicationId: !Ref Application
+#   #     EnvironmentId: !Ref ProdEnvironment
+#   #     DeploymentStrategyId: !Ref DeploymentStrategy
+#   #     ConfigurationProfileId: !Ref ConfigurationProfile
+#   #     ConfigurationVersion: '3'
+#   #     Description: !Sub ${EnvironmentName}-Deployment
+#   #     Tags:
+#   #       - Key: Env
+#   #         Value: !Ref AppConfigStage
+
+
+# # MARK: Output
+# Outputs:
+#   VPC:
+#     Description: A reference to the created VPC
+#     Value: !Ref VPC
+
+#   PublicSubnet1:
+#     Description: A reference to the public subnet in the 1st Availability Zone
+#     Value: !Ref PublicSubnet1
+
+#   PublicSubnet2:
+#     Description: A reference to the public subnet in the 2nd Availability Zone
+#     Value: !Ref PublicSubnet2
+
+#   PrivateSubnet1:
+#     Description: A reference to the private subnet in the 1st Availability Zone
+#     Value: !Ref PrivateSubnet1
+
+#   PrivateSubnet2:
+#     Description: A reference to the private subnet in the 2nd Availability Zone
+#     Value: !Ref PrivateSubnet2
+
+#   IsolatedSubnet1:
+#     Description: A reference to the Isolated subnet in the 1st Availability Zone
+#     Value: !Ref IsolatedSubnet1
+
+#   IsolatedSubnet2:
+#     Description: A reference to the Isolated subnet in the 2nd Availability Zone
+#     Value: !Ref IsolatedSubnet2
+
+#   BastionHostInstance:
+#     Description: Pulbic IP
+#     Value: !GetAtt BastionHostInstance.PublicIp
+
+#   LamdbaArn:
+#     Description: A reference to the Isolated subnet in the 2nd Availability Zone
+#     Value: !GetAtt  LambdaFunction.Arn
+
+#   # ApiGatewayUrl:
+#   #   Description: URL of the API Gateway
+#   #   Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod"
   
-  AlbEnddPoint:
-    Description: URL of the ALB
-    Value: !GetAtt ApplicationLoadBalancer.DNSName
+#   AlbEnddPoint:
+#     Description: URL of the ALB
+#     Value: !GetAtt ApplicationLoadBalancer.DNSName
   
