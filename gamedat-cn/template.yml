@@ -1,0 +1,38 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters: 
+  AMIID: 
+   Type: AWS::SSM::Parameter::Value<String>
+   Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-ebs'
+Resources:
+    SecurityPackageEC2: 
+      Type : AWS::EC2::Instance
+      CreationPolicy : 
+        ResourceSignal : 
+          Timeout : PT5M 
+      Properties : 
+        KeyName : AWSLabsKeyPair-c65Qx1dv2FoAE5VqhFjZEo 
+        ImageId : ami-07c087e7b769f506c 
+        InstanceType : t3.micro
+        IamInstanceProfile: SecurityPackageEC2Profile-ap-northeast-1 
+        Tags : 
+            - Key : Name 
+              Value : SecurityPackageEC2 
+        NetworkInterfaces: 
+          -
+            AssociatePublicIpAddress: false
+            DeviceIndex: 0
+            GroupSet: 
+              - sg-031872db09a3776bd
+            SubnetId: subnet-090b42cc1a6471118
+        UserData:
+          Fn::Base64: 
+            !Sub | 
+              #!/bin/bash 
+              
+              yum update -y ;
+              
+              
+              cd /home/ec2-user ;
+              aws logs describe-log-groups --region ap-northeast-1 --debug --cli-connect-timeout 3 --cli-read-timeout 3 >> awslog.txt 2>&1  ; 
+              /opt/aws/bin/cfn-signal -e $?  --stack SecurityPackageStack --resource SecurityPackageEC2 --region ap-northeast-1  > cflog.txt 2>&1 ; 
+              

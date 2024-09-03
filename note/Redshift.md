@@ -14,6 +14,18 @@ IGNOREHEADER 1
 DATEFORMAT 'auto';
 ```
 
+```
+COPY TABLE_NAME
+FROM 'S3_URL'
+IAM_ROLE 'IAM_ROLE'
+FORMAT AS CSV
+DELIMITER ','
+NULL 'NaN'
+IGNOREHEADER 1
+TIMEFORMAT 'DD/MM/YYYY HH:MI:SS'
+REGION AS 'us-east-1';
+```
+
 ## Count unique
 
 ```docker
@@ -21,6 +33,31 @@ SELECT
     count(distinct user_id)
 FROM
     "dev"."public"."game_attempts" ;
+```
+
+
+## Create Model
+```
+CREATE MODEL predict_web_attacks
+  FROM
+  (
+      select
+        COLUMUS
+        from TABLE
+          )
+  TARGET label
+  FUNCTION predict_web_attacks
+  IAM_ROLE 'arn:aws:iam::AccountID:role/RedshiftClusterRole-AccountID-region'
+  AUTO OFF
+  MODEL_TYPE XGBOOST
+  OBJECTIVE 'multi:softmax'
+  PREPROCESSORS 'none'
+  HYPERPARAMETERS DEFAULT EXCEPT ( NUM_CLASS '5' )
+  SETTINGS (
+   S3_BUCKET 'labstack-prewarm-XXXXXX-XXX-X-redshifts3bucket-XXXXXX',
+   MAX_RUNTIME 1500
+  )
+  ;
 ```
 
 ## Create Table

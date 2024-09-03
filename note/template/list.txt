@@ -1,0 +1,11 @@
+-CloudFront
+-KMS
+-WAF
+-Amazon Inspector 
+-GuardDuty
+-SNS
+-SQS
+
+
+
+Score check list 
