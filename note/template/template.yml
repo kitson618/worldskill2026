@@ -53,8 +53,6 @@ Parameters:
   AppConfigStage:
     Type: String
     Default: Production
-# AWS::AccountId 
-# AWS::Region
 
 Resources: 
 
@@ -446,76 +444,76 @@ Resources:
           - '/*'
 
 # MARK: API REST API
-  ApiGateway:
-    Type: AWS::ApiGateway::RestApi
-    Properties:
-      Description: !Ref EnvironmentName
-      EndpointConfiguration:
-        Types:
-          - REGIONAL
-      Name: !Ref EnvironmentName
+  # ApiGateway:
+  #   Type: AWS::ApiGateway::RestApi
+  #   Properties:
+  #     Description: !Ref EnvironmentName
+  #     EndpointConfiguration:
+  #       Types:
+  #         - REGIONAL
+  #     Name: !Ref EnvironmentName
 
-  ApiMethod:
-    Type: 'AWS::ApiGateway::Method'
-    Properties:
-      RestApiId: !Ref ApiGateway
-      ResourceId: !GetAtt ApiGateway.RootResourceId
-      HttpMethod: !Ref ApiGatewayHTTPMethod
-      MethodResponses:
-        - StatusCode: '200'
-          ResponseModels:
-            application/json: Empty
-      AuthorizationType: NONE
-      Integration:
-        Type: AWS
-        IntegrationHttpMethod: !Ref ApiGatewayHTTPMethod
-        # Credentials: !Sub arn:aws:iam::${AWS::AccountId}:role/MyLambdaExecutionRole
-        PassthroughBehavior: WHEN_NO_TEMPLATES
-        IntegrationResponses:
-          - StatusCode: "200"
-        Uri: !Sub >-
-          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunction.Arn}/invocations
+  # ApiMethod:
+  #   Type: 'AWS::ApiGateway::Method'
+  #   Properties:
+  #     RestApiId: !Ref ApiGateway
+  #     ResourceId: !GetAtt ApiGateway.RootResourceId
+  #     HttpMethod: !Ref ApiGatewayHTTPMethod
+  #     MethodResponses:
+  #       - StatusCode: '200'
+  #         ResponseModels:
+  #           application/json: Empty
+  #     AuthorizationType: NONE
+  #     Integration:
+  #       Type: AWS
+  #       IntegrationHttpMethod: !Ref ApiGatewayHTTPMethod
+  #       # Credentials: !Sub arn:aws:iam::${AWS::AccountId}:role/MyLambdaExecutionRole
+  #       PassthroughBehavior: WHEN_NO_TEMPLATES
+  #       IntegrationResponses:
+  #         - StatusCode: "200"
+  #       Uri: !Sub >-
+  #         arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunction.Arn}/invocations
 
-  Deployment:
-    DependsOn: ApiMethod
-    Type: 'AWS::ApiGateway::Deployment'
-    Properties:
-      RestApiId: !Ref ApiGateway
-      StageName: Prod
+  # Deployment:
+  #   DependsOn: ApiMethod
+  #   Type: 'AWS::ApiGateway::Deployment'
+  #   Properties:
+  #     RestApiId: !Ref ApiGateway
+  #     StageName: Prod
       
-  ApiKey:
-    Type: 'AWS::ApiGateway::ApiKey'
-    DependsOn:
-      - Deployment
-    Properties:
-      Name: !Sub ${EnvironmentName}-apikey
-      Description: !Sub ${EnvironmentName}-apikey
-      Enabled: true
-      StageKeys:
-        - RestApiId: !Ref ApiGateway
-          StageName: Prod
+  # ApiKey:
+  #   Type: 'AWS::ApiGateway::ApiKey'
+  #   DependsOn:
+  #     - Deployment
+  #   Properties:
+  #     Name: !Sub ${EnvironmentName}-apikey
+  #     Description: !Sub ${EnvironmentName}-apikey
+  #     Enabled: true
+  #     StageKeys:
+  #       - RestApiId: !Ref ApiGateway
+  #         StageName: Prod
 
-  ApiUsagePlan:
-    Type: "AWS::ApiGateway::UsagePlan"
-    Properties:
-      ApiStages: 
-      - ApiId: !Ref ApiGateway
-        Stage: Prod     
-      Description: "Api Usage Plan"
-      Quota:
-        Limit: 2000
-        Period: MONTH
-      Throttle:
-        BurstLimit: 10
-        RateLimit: 10
-      UsagePlanName: api-userplan
+  # ApiUsagePlan:
+  #   Type: "AWS::ApiGateway::UsagePlan"
+  #   Properties:
+  #     ApiStages: 
+  #     - ApiId: !Ref ApiGateway
+  #       Stage: Prod     
+  #     Description: "Api Usage Plan"
+  #     Quota:
+  #       Limit: 2000
+  #       Period: MONTH
+  #     Throttle:
+  #       BurstLimit: 10
+  #       RateLimit: 10
+  #     UsagePlanName: api-userplan
 
-  ApiUsagePlanKey:
-    Type: "AWS::ApiGateway::UsagePlanKey"
-    Properties:
-      KeyId: !Ref ApiKey
-      KeyType: API_KEY
-      UsagePlanId: !Ref ApiUsagePlan
+  # ApiUsagePlanKey:
+  #   Type: "AWS::ApiGateway::UsagePlanKey"
+  #   Properties:
+  #     KeyId: !Ref ApiKey
+  #     KeyType: API_KEY
+  #     UsagePlanId: !Ref ApiUsagePlan
 
 # MARK: ALB LOG Bucket
   AlbLogS3Bucket:
@@ -913,39 +911,39 @@ Resources:
 
 
 #MARK: Redis
-  RedisDbSg:
-    Type: AWS::EC2::SecurityGroup
-    DependsOn: VPC
-    Properties:
-      GroupDescription: Redis
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 6379
-          ToPort: 6379
-          CidrIp: !Ref VpcCIDR
+  # RedisDbSg:
+  #   Type: AWS::EC2::SecurityGroup
+  #   DependsOn: VPC
+  #   Properties:
+  #     GroupDescription: Redis
+  #     VpcId: !Ref VPC
+  #     SecurityGroupIngress:
+  #       - IpProtocol: tcp
+  #         FromPort: 6379
+  #         ToPort: 6379
+  #         CidrIp: !Ref VpcCIDR
 
-  RedisSubnetGroup:
-    Type: AWS::MemoryDB::SubnetGroup
-    Properties:
-      Description: 'isolated-subnet-redis'
-      SubnetGroupName: 'isolated-subnet-redis'
-      SubnetIds:
-        - !Ref IsolatedSubnet1
-        - !Ref IsolatedSubnet2
+  # RedisSubnetGroup:
+  #   Type: AWS::MemoryDB::SubnetGroup
+  #   Properties:
+  #     Description: 'isolated-subnet-redis'
+  #     SubnetGroupName: 'isolated-subnet-redis'
+  #     SubnetIds:
+  #       - !Ref IsolatedSubnet1
+  #       - !Ref IsolatedSubnet2
 
-  Redis:
-    Type: AWS::MemoryDB::Cluster
-    Properties:
-      ACLName: open-access
-      ClusterName: !Sub ${EnvironmentName}-redis
-      NodeType: db.t4g.small
-      SecurityGroupIds:
-        - !Ref RedisDbSg
-      SubnetGroupName: !Ref RedisSubnetGroup
-      Tags:
-        - Key: environment
-          Value: production
+  # Redis:
+  #   Type: AWS::MemoryDB::Cluster
+  #   Properties:
+  #     ACLName: open-access
+  #     ClusterName: !Sub ${EnvironmentName}-redis
+  #     NodeType: db.t4g.small
+  #     SecurityGroupIds:
+  #       - !Ref RedisDbSg
+  #     SubnetGroupName: !Ref RedisSubnetGroup
+  #     Tags:
+  #       - Key: environment
+  #         Value: production
 
 
 #MARK: RDS
@@ -1035,38 +1033,38 @@ Resources:
 
 
 # MARK: ECR
-  RootEcrRepo: 
-    Type: AWS::ECR::Repository
-    Properties: 
-      RepositoryName: "root-repository"
-      EncryptionConfiguration:
-        EncryptionType: AES256
-      ImageTagMutability: IMMUTABLE
-      ImageScanningConfiguration: 
-        ScanOnPush: true
+  # RootEcrRepo: 
+  #   Type: AWS::ECR::Repository
+  #   Properties: 
+  #     RepositoryName: "root-repository"
+  #     EncryptionConfiguration:
+  #       EncryptionType: AES256
+  #     ImageTagMutability: IMMUTABLE
+  #     ImageScanningConfiguration: 
+  #       ScanOnPush: true
 
-  StubEcrRepo: 
-    Type: AWS::ECR::Repository
-    Properties: 
-      RepositoryName: "stub-repository"
-      EncryptionConfiguration:
-        EncryptionType: AES256
-      ImageTagMutability: IMMUTABLE
-      ImageScanningConfiguration: 
-        ScanOnPush: true
+  # StubEcrRepo: 
+  #   Type: AWS::ECR::Repository
+  #   Properties: 
+  #     RepositoryName: "stub-repository"
+  #     EncryptionConfiguration:
+  #       EncryptionType: AES256
+  #     ImageTagMutability: IMMUTABLE
+  #     ImageScanningConfiguration: 
+  #       ScanOnPush: true
 
 
 # MARK: ECS
-  ECSCluster:
-    Type: AWS::ECS::Cluster
-    Properties:
-      ClusterName: !Ref EnvironmentName
-      ClusterSettings:
-        - Name: containerInsights
-          Value: enabled
-      Tags:
-        - Key: environment
-          Value: production
+  # ECSCluster:
+  #   Type: AWS::ECS::Cluster
+  #   Properties:
+  #     ClusterName: !Ref EnvironmentName
+  #     ClusterSettings:
+  #       - Name: containerInsights
+  #         Value: enabled
+  #     Tags:
+  #       - Key: environment
+  #         Value: production
 
 
 # MARK: EKS
@@ -1211,19 +1209,41 @@ Resources:
         - Key: Env
           Value: !Ref AppConfigStage
 
-  # appConfigDeployment:
-  #   DependsOn: ConfigurationProfile
-  #   Type: AWS::AppConfig::Deployment
-  #   Properties:
-  #     ApplicationId: !Ref Application
-  #     EnvironmentId: !Ref ProdEnvironment
-  #     DeploymentStrategyId: !Ref DeploymentStrategy
-  #     ConfigurationProfileId: !Ref ConfigurationProfile
-  #     ConfigurationVersion: '3'
-  #     Description: !Sub ${EnvironmentName}-Deployment
-  #     Tags:
-  #       - Key: Env
-  #         Value: !Ref AppConfigStage
+  appConfigDeployment:
+    DependsOn: ConfigurationProfile
+    Type: AWS::AppConfig::Deployment
+    Properties:
+      ApplicationId: !Ref Application
+      EnvironmentId: !Ref ProdEnvironment
+      DeploymentStrategyId: !Ref DeploymentStrategy
+      ConfigurationProfileId: !Ref ConfigurationProfile
+      ConfigurationVersion: '1'
+      Description: !Sub ${EnvironmentName}-Deployment
+      Tags:
+        - Key: Env
+          Value: !Ref AppConfigStage
+
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - Id: "Origin1"
+            DomainName: !GetAtt ApplicationLoadBalancer.DNSName
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginProtocolPolicy: http-only
+        Enabled: true
+        DefaultCacheBehavior:
+          TargetOriginId: "Origin1"
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 83da9c7e-98b4-4e11-a168-04f0df8e2c65
+          OriginRequestPolicyId: 216adef6-5c7f-47e4-b989-5492eafa07d3
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+        HttpVersion: http2
 
 
 # MARK: Output
@@ -1264,11 +1284,11 @@ Outputs:
     Description: A reference to the Isolated subnet in the 2nd Availability Zone
     Value: !GetAtt  LambdaFunction.Arn
 
-  ApiGatewayUrl:
-    Description: URL of the API Gateway
-    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+  # ApiGatewayUrl:
+  #   Description: URL of the API Gateway
+  #   Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod"
 
-  AlbEnddPoint:
-    Description: URL of the ALB
-    Value: !GetAtt ApplicationLoadBalancer.DNSName
+  # AlbEnddPoint:
+  #   Description: URL of the ALB
+  #   Value: !GetAtt ApplicationLoadBalancer.DNSName
   
