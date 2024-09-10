@@ -22,7 +22,7 @@ Delete a file on S3
   
 Stubborn issues of authentication, a name in space cause 403 request error.
            
-            Check for 
+Check for 
 1. IAM (Identity and Access Management):
    - User names
    - Role names
@@ -62,7 +62,7 @@ Stubborn issues of authentication, a name in space cause 403 request error.
    - Profiles in ~/.aws/credentials or ~/.aws/config files
 
 10. Systems Manager Parameter Store:
-	- Parameter names storing sensitive information
+   - Parameter names storing sensitive information
 
 Source: https://www.valeuriad.fr/chaos-engineering-sur-aws-faire-son-propre-gameday/
 
