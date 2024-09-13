@@ -1,0 +1,412 @@
+
+Security:	2
+(Secure S3 bucket and Configure Cloudfront OAI).	2
+Task 1: Secure S3 Bucket	2
+Protect a Vulnerable Web Application (Web ACL)	4
+S3 bucket policy template	5
+IAM policy	6
+Security service overview	8
+Network	9
+Route 53 Resolver/Hosted Zones, and Centralize VPC endpoints	9
+Route 53 record type	12
+
+Security:
+ (Secure S3 bucket and Configure Cloudfront OAI).
+
+Task 1: Secure S3 Bucket
+Identify the problem: The current S3 bucket policy has too many wildcards, making it public.
+Modify the S3 bucket permissions to ensure granular access.
+Use the following guidelines for the bucket policy:
+Effect: Use "Allow" only
+Principal: Use specific principals (user, role) instead of root
+Action: Use specific S3 bucket-level or object-level actions
+Resource: Use your specific bucket information
+
+
+Avoid using "Effect": "Deny" or deleting the policy entirely.
+Use the provided basic bucket policy as a template, replacing account number and bucket ARN.
+{
+    "Version": "2008-10-17",
+    "Id": "Basic S3 Bucket Policy",
+    "Statement": [
+        {
+            "Sid": "1",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::YOUR-AWS-ACCOUNT-NUMBER:root"
+            },
+            "Action": "s3:GetObject",
+            "Resource": "YOUR-S3-BUCKET-ARN/*"
+        }
+    ]
+}
+
+
+
+Task 2: Configure CloudFront Distribution
+Create an Origin Access Identity (OAI) in CloudFront.
+Attach the OAI to the CloudFront distribution.
+Manually update the S3 bucket policy to grant the OAI permission to read files.
+Follow these steps:
+In CloudFront console, select your distribution
+Edit the AWSomeMediaS3Origin
+Create a new OAI
+Choose to update the bucket policy manually
+Copy the OAI ID
+Update the S3 bucket policy using the provided template, replacing OAI ID and bucket ARN
+{
+  "Version": "2008-10-17",
+  "Id": "PolicyForCloudFrontPrivateContent",
+  "Statement": [
+ {
+   "Sid": "1",
+   "Effect": "Allow",
+   "Principal": {
+     "AWS": "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity Your-CloudFront-OAI-ID"
+   },
+   "Action": "s3:GetObject",
+   "Resource": "Your-S3-Bucket-ARN/*"
+ }
+  ]
+}
+Task 3: What Is The Secret Code
+Review the Web ACL rule in AWS WAF & Shield console.
+Understand the rule logic: It blocks requests to secret.html unless they include a specific query string.
+Construct a URL that passes the rule:
+The URL should end with secret.html
+Include the required query string
+The correct URL format is:
+ https://[cloudfront-domain]/secret.html?[query_argument]=passcode
+
+Protect a Vulnerable Web Application (Web ACL)
+
+
+Task 1: Protect Customer Data
+Question: Protect a web application from data exfiltration attempts by placing it behind a Web Application Firewall.
+Clues:
+Create a WAFv2 WebACL with a managed rule to prevent SQL injection.
+Attach the WebACL to the Application Load Balancer.
+Steps:
+Create a WAFv2 WebACL in the AWS Console
+Add the Application Load Balancer as a resource
+Apply the AWS managed rule group for SQL database protection
+Task 2: User Session not working behind CloudFront
+Question: Fix login behavior for a global application behind a CloudFront distribution where user sessions are not working properly.
+Clues:
+Update CloudFront distribution's default behavior to forward all parameters.
+Use the "AllViewer" managed origin request policy.
+Steps:
+Edit the CloudFront distribution's default behavior in the AWS Console
+Update the Origin Request Policy to "AllViewer"
+Save changes and wait for distribution deployment
+Task 3: Protect Application from unsafe PHP functions
+Question: Protect a global application from unsafe PHP functions, specifically Local File Inclusion (LFI).
+Clues:
+Create a global WAFv2 WebACL with a managed rule to prevent Local File Inclusion (LFI).
+Attach the WebACL to the CloudFront distribution.
+Steps:
+Create a new global WAFv2 WebACL in the AWS Console
+Select the CloudFront distribution as the resource type
+Apply the AWS managed rule group for Linux operating system
+Attach the WebACL to the CloudFront distribution
+
+
+
+S3 bucket policy template 
+{
+	"Version": "2012-10-17",
+	"Statement": [
+    	{
+        	"Sid": "StatementIdentifier",
+        	"Effect": "Allow",
+        	"Principal": {
+            	"AWS": "arn:aws:iam::ACCOUNT-ID:user/USERNAME"
+        	},
+        	"Action": [
+            	"s3:GetObject",
+            	"s3:PutObject",
+            	"s3:ListBucket"
+        	],
+        	"Resource": [
+            	"arn:aws:s3:::BUCKET-NAME",
+            	"arn:aws:s3:::BUCKET-NAME/*"
+        	],
+        	"Condition": {
+            	"IpAddress": {
+                	"aws:SourceIp": "IP-ADDRESS/32"
+            	}
+        	}
+    	}
+	]
+}
+Key elements to customize:
+
+    "Sid": Unique identifier for the statement
+    "Effect": "Allow" or "Deny"
+    "Principal": Who the policy applies to (user, role, or account)
+    "Action": S3 actions to allow/deny
+    "Resource": S3 bucket and/or objects
+  "Condition": Optional additional restrictions
+
+➡️ Common S3 actions:
+
+    s3:GetObject
+    s3:PutObject
+    s3:DeleteObject
+    s3:ListBucket
+
+➡️ Quick modifications:
+
+    To restrict to specific folder: Add folder path to Resource ARN
+    To allow public access: Use "Principal": "*"
+    To deny instead of allow: Change "Effect" to "Deny"
+
+
+IAM policy 
+Here's a summary of different types of IAM policies in AWS, presented in an easy-to-reference format:
+
+1. ➡️ Identity-based Policies
+   ↳ Attached to IAM users, groups, or roles
+   ↳ Types:
+ 	• AWS Managed Policies (created and managed by AWS)
+ 	• Customer Managed Policies (created and managed by you)
+ 	• Inline Policies (embedded directly in a single user, group, or role)
+
+Example: 
+{
+	"Version": "2012-10-17",
+	"Statement": [
+    	{
+        	"Effect": "Allow",
+        	"Action": [
+            	"s3:GetObject",
+            	"s3:PutObject"
+        	],
+        	"Resource": "arn:aws:s3:::your_buket”
+    	},
+    	{
+        	"Effect": "Allow",
+        	"Action": "ec2:DescribeInstances",
+        	"Resource": "*"
+    	}
+	]
+}
+
+➡️ Key components:
+Version: Policy language version
+Statement: Array of permission statements
+Effect: "Allow"
+Action: AWS actions allowed
+Resource: AWS resources the actions apply to
+➡️ This policy:
+Allows reading and writing objects in a specific S3 bucket
+Allows describing EC2 instances in any region
+
+
+
+2. ➡️ Resource-based Policies
+   ↳ Attached directly to resources (e.g., S3 buckets, SQS queues)
+   ↳ Specify who can access the resource and what actions they can perform
+   ↳ Always inline (not managed separately)
+
+Lambda policy 
+{
+	"Version": "2012-10-17",
+	"Statement": [
+    	{
+        	"Effect": "Allow",
+        	"Principal": {
+            	"Service": "apigateway.amazonaws.com"
+        	},
+        	"Action": "lambda:InvokeFunction",
+        	"Resource": "arn:aws:lambda:us-east-1:aws_account_id:function:your_function_name"
+    	}
+	]
+}
+
+➡️Key components:
+Version: Policy language version
+Statement: Single permission statement
+Effect: "Allow"
+Principal: Service allowed to invoke the function
+Action: Lambda action allowed
+Resource: Lambda function ARN
+➡️ This policy:
+Allows API Gateway to invoke the specified Lambda function
+
+Security service overview
+➡️ IAM (Identity and Access Management)
+ ↳ Manage users, groups, roles, and permissions
+➡️ AWS WAF (Web Application Firewall)
+ ↳ Protect web apps from common exploits
+➡️ AWS Shield
+ ↳ DDoS protection service
+➡️ Amazon GuardDuty
+ ↳ Intelligent threat detection
+➡️ AWS KMS (Key Management Service)
+ ↳ Create and manage encryption keys
+➡️ AWS Config
+ ↳ Assess, audit, and evaluate resource configurations
+➡️ Amazon Inspector
+ ↳ Automated security assessment service
+➡️ AWS CloudTrail
+ ↳ Track user activity and API usage
+➡️ Amazon Macie
+ ↳ Discover and protect sensitive data
+➡️ AWS Secrets Manager
+ ↳ Rotate, manage, and retrieve secrets
+➡️ AWS Security Hub
+ ↳ Comprehensive view of security alerts and posture
+➡️ AWS Firewall Manager
+ ↳ Centrally manage firewall rules
+➡️ Amazon Detective
+ ↳ Analyze and visualize security data to investigate issues
+➡️ AWS Network Firewall
+ ↳ Deploy network security across VPCs
+➡️ AWS Certificate Manager
+ ↳ Provision, manage, and deploy SSL/TLS certificates
+
+
+Network
+ Route 53 Resolver/Hosted Zones, and Centralize VPC endpoints
+
+
+
+Task 1: Enable DNS Resolution
+Objective: Fix the Shared VPC so that DNS resolution works from inside the VPC.
+Problem: Unable to access the Console via Session Manager for instances in the Shared VPC, and DNS-related tasks are failing.
+Key Steps:
+Go to the VPC Service in the AWS Console
+Find VPC-Shared
+Select Actions > Edit DNS Resolution
+Enable DNS Resolution
+Save Changes
+Important Points:
+The issue is related to VPC configuration, not EC2 instances or OS settings
+Compare DNS-related settings of VPC-Shared with other VPCs (e.g., VPC-App1)
+After changing the VPC setting, wait a few minutes before trying to use Session Manager
+Task 2: Allow All VPCs to resolve on-prem DNS records
+Objective: Enable all VPCs to resolve DNS records from the on-premises DNS server.
+Key Steps:
+Create a Route 53 Resolver Outbound Endpoint in VPC-Shared
+
+
+Use private subnets
+Select the appropriate security group
+Create a Route 53 Resolver Rule
+
+
+Rule type: Forward
+Domain: route53jam.private
+Target IP: 172.16.2.12 (on-prem DNS server IP)
+Port: 53
+Associate the Resolver Rule with VPC-Shared, VPC-App1, and VPC-App2
+
+
+Important Points:
+Only create the Resolver endpoint in VPC-Shared
+Use the correct security group (Shared-For-Route53-Resolver-Endpoints)
+Select IPv4 for the Endpoint Type
+Use two IP addresses in different Availability Zones for the endpoint
+Associate the rule with all three VPCs (Shared, App1, App2)
+
+Task 3: Allow Onprem Hosts to resolve AWS records
+Objective: Enable on-premises hosts to resolve DNS records for AWS resources.
+Key Steps:
+Create a Route 53 Resolver Inbound Endpoint in VPC-Shared
+
+
+Use private subnets
+Specify exact IP addresses as outlined in the inventory
+Configure the Inbound Endpoint:
+
+
+VPC: Select VPC-Shared
+Security Group: Use Shared-For-Route53-Resolver-Endpoints
+Endpoint Type: IPv4
+IP address #1: 10.3.2.21 (in first AZ, e.g., us-west-2a)
+IP address #2: 10.3.12.21 (in second AZ, e.g., us-west-2b)
+Important Points:
+Create the Inbound Endpoint in VPC-Shared
+Use the specific IP addresses provided in the inventory
+Ensure you select the correct private subnets
+Use the designated security group
+
+Task 4: Centralize your VPC Endpoints - use SQS for Demo
+Objective: Set up a centralized SQS VPC endpoint in the Shared VPC and make it accessible to App1 and App2 VPCs.
+Key Steps:
+Create an SQS VPC endpoint in the Shared VPC
+
+
+Disable "Enable Private DNS Name" option
+Create a Private Hosted Zone (PHZ) in Route 53
+
+
+Name it "sqs.[region].amazonaws.com"
+Associate it with Shared, App1, and App2 VPCs
+Create a DNS alias record in the PHZ
+
+
+Point to the SQS VPC endpoint's DNS name (without AZ-specific suffix)
+Verify connectivity from App1 and App2 VPCs using nslookup and AWS CLI
+
+
+Important Points:
+Use private subnets in the Shared VPC for the endpoint
+Disable private DNS name for the endpoint
+Create the PHZ with the correct name (matching SQS namespace)
+Associate the PHZ with all three VPCs
+Create the correct alias record in the PHZ
+Ensure the security group allows HTTPS traffic
+
+Route 53 record type 
+
+A: Maps a domain to an IPv4 address
+
+
+AAAA: Maps a domain to an IPv6 address
+
+
+CNAME: Creates an alias for another domain name
+
+
+MX: Specifies mail servers for email routing
+
+
+NS: Defines authoritative name servers for a zone
+
+
+PTR: Used for reverse DNS lookups
+
+
+SOA: Contains administrative information about the DNS zone
+
+
+TXT: Stores text information, often used for domain verification
+
+
+SRV: Specifies location of services
+
+
+CAA: Specifies which Certificate Authorities can issue SSL certificates
+
+
+ALIAS: AWS-specific record that can point to AWS resources
+
+
+Weighted: Distributes traffic based on assigned weights
+
+
+Latency-based: Routes traffic based on lowest network latency
+
+
+Geolocation: Routes traffic based on geographic location
+
+
+Failover: Directs traffic to healthy resources
+
+
+Multi-value answer: Returns multiple values, like IP addresses, for a single DNS query
+
+
+
