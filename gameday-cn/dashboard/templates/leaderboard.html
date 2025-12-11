@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="text-center mb-4">
+            <h1 class="display-4 fw-bold">
+                <i class="fas fa-crown" style="color: var(--gold);"></i>
+                Leaderboard
+            </h1>
+            <p class="text-muted">Real-time player rankings</p>
+        </div>
+        
+        <!-- Top 3 Podium -->
+        {% if users|length >= 3 %}
+        <div class="row mb-5">
+            <!-- 2nd Place -->
+            <div class="col-md-4 text-center">
+                <div class="card" style="margin-top: 40px;">
+                    <div class="card-body">
+                        <div class="rank-badge rank-2 mx-auto mb-3">
+                            <i class="fas fa-medal"></i>
+                        </div>
+                        <h4>{{ users[1].username }}</h4>
+                        <div class="score-badge bg-secondary text-white mx-auto d-inline-block">
+                            {{ users[1].score }} pts
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 1st Place -->
+            <div class="col-md-4 text-center">
+                <div class="card border-warning">
+                    <div class="card-body">
+                        <div class="rank-badge rank-1 mx-auto mb-3">
+                            <i class="fas fa-crown"></i>
+                        </div>
+                        <h3 class="fw-bold">{{ users[0].username }}</h3>
+                        <div class="score-badge bg-warning text-dark mx-auto d-inline-block">
+                            {{ users[0].score }} pts
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 3rd Place -->
+            <div class="col-md-4 text-center">
+                <div class="card" style="margin-top: 60px;">
+                    <div class="card-body">
+                        <div class="rank-badge rank-3 mx-auto mb-3">
+                            <i class="fas fa-award"></i>
+                        </div>
+                        <h5>{{ users[2].username }}</h5>
+                        <div class="score-badge bg-secondary text-white mx-auto d-inline-block">
+                            {{ users[2].score }} pts
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Full Ranking Table -->
+        <div class="card mt-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="fas fa-list-ol"></i> Full Rankings</h5>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 80px;">Rank</th>
+                            <th>Player</th>
+                            <th style="width: 150px;" class="text-end">Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>
+                                {% if loop.index == 1 %}
+                                    <span class="rank-badge rank-1">{{ loop.index }}</span>
+                                {% elif loop.index == 2 %}
+                                    <span class="rank-badge rank-2">{{ loop.index }}</span>
+                                {% elif loop.index == 3 %}
+                                    <span class="rank-badge rank-3">{{ loop.index }}</span>
+                                {% else %}
+                                    <span class="rank-badge rank-other">{{ loop.index }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="fw-bold">
+                                {{ user.username }}
+                                {% if current_user.is_authenticated and user.id == current_user.id %}
+                                    <span class="badge bg-primary ms-2">You</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <span class="score-badge 
+                                    {% if loop.index == 1 %}bg-warning text-dark
+                                    {% elif loop.index == 2 or loop.index == 3 %}bg-secondary text-white
+                                    {% else %}bg-light text-dark
+                                    {% endif %}">
+                                    {{ user.score }} <small>pts</small>
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Auto-refresh every 30 seconds
+    setTimeout(function() {
+        window.location.reload();
+    }, 30000);
+</script>
+{% endblock %}

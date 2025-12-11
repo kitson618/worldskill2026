@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2 class="mb-4">
+            <i class="fas fa-user-circle"></i> Welcome, <span class="text-primary">{{ user.username }}</span>!
+        </h2>
+        
+        <!-- Score Card -->
+        <div class="card border-primary mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-star"></i> Your Status</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <h2 class="display-4 fw-bold text-success">{{ user.score }}</h2>
+                    <p class="text-muted">Total Points</p>
+                </div>
+                <div class="d-flex gap-2 mb-4">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary btn-sm flex-fill">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </a>
+                    <a href="{{ url_for('score_history') }}" class="btn btn-outline-info btn-sm flex-fill">
+                        <i class="fas fa-history"></i> History
+                    </a>
+                    <a href="{{ url_for('leaderboard') }}" class="btn btn-outline-warning btn-sm flex-fill">
+                        <i class="fas fa-trophy"></i> Leaderboard
+                    </a>
+                </div>
+                <hr>
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-globe"></i> Application URL
+                        </label>
+                        <input type="url" name="url" class="form-control" value="{{ user.url or '' }}" placeholder="http://your-app-url.com">
+                        <div class="form-text"><i class="fas fa-clock"></i> Checked every minute</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-code"></i> API Gateway URL
+                        </label>
+                        <input type="url" name="api_url" class="form-control" value="{{ user.api_url or '' }}" placeholder="https://your-api-url.com">
+                        <div class="form-text"><i class="fas fa-clock"></i> Checked every minute</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-save"></i> Update URLs
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Auto-refresh every 60 seconds (60000 milliseconds)
+    setTimeout(function() {
+        window.location.reload();
+    }, 60000);
+</script>
+{% endblock %}
