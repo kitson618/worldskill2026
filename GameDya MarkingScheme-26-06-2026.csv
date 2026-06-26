@@ -1,0 +1,690 @@
+Event,Category,Aspect,Measurement,Max. Score,Actual Score,
+Shanghai friendly 2026,,Ratio of recommended deployment size to actual.,.  .2 <= [Cost Ratio] <= 1.0,,,
+Shanghai friendly 2026,,Use of Caching,"Use of Application Cache, such as CloudFront",,,
+Shanghai friendly 2026,,Recover more easily from both unintended user actions and application failures,S3 bucket versioning enabled,,,
+Shanghai friendly 2026,,Convenient to troubleshoot network problems,VPC flow log enabled,,,
+Shanghai friendly 2026,,Efficient way to categorize resources in different ways,EC2 instance tagged,,,
+Shanghai friendly 2026,,Shorten system boot time,Use of self-baked AMI,,,
+Shanghai friendly 2026,,CloudWatch Alarm to monitor instance status,CloudWatch alarm defined for appropriate metrics,,,
+Shanghai friendly 2026,,Providing detailed insights into request latency and identifying performance bottlenecks,API Gateway active tracing by X-Ray,,,
+Shanghai friendly 2026,,Enhances security by protecting applications from common web exploits and vulnerabilities,WAF configured,,,
+Shanghai friendly 2026,,Assign resources least-privilege security policies and permissions,No security groups having ingress rule which source is 0.0.0.0/0,,,
+Shanghai friendly 2026,,Database security,DynamoDB / RDS encryption enabled,,,
+Shanghai friendly 2026,,Better isolation for computing instances,EC2/Database in private subnets. Bastion Hosts with limited access used.,,,
+Shanghai friendly 2026,,Data encryption,S3 bucket encryption enabled,,,
+Shanghai friendly 2026,,Data encryption in flight,TTPS used for all communications between services,,,
+Shanghai friendly 2026,,Allows for detailed monitoring and troubleshooting of containerized applications,ECS Container Insight enabled,,,
+Shanghai friendly 2026,,Better isolation and reduce blast radius,Multi subnets defined across AZs for each layer,,,
+Shanghai friendly 2026,,Application able to serve public traffic across multiple local networks,Multiple subnets in application deployment,,,
+Shanghai friendly 2026,,Efficiently distributing incoming network traffic,ALB used,,,
+Shanghai friendly 2026,,Transaction timeout response rate per day,Total network request timeouts < 10%,,,
+Shanghai friendly 2026,,Data Reliability,DynamoDB / RDS has regular backup configured,,,
+Shanghai friendly 2026,,"Caching content closer to users, reducing latency and enhancing scalability",CloudFront configured,,,
+Shanghai friendly 2026,,"Automating deployment, scaling, and management of containerized applications",Use ECS Service,,,
+Shanghai friendly 2026,,Daily overall response time average,< 4s response time,,,
+Shanghai friendly 2026,,Availability,Percentage of messages accepted for process >=90%,,,
+Shanghai friendly 2026,,Identified infrastructure scales to meet demand.,Application auto-scales once competitors are hands off,,,
+Shanghai friendly 2026,,Assign resources least-privilege security policies and permissions,All services are utilizing defined and recommended security policies,3.0,,
+Shanghai friendly 2026,,ECR security configuration,"ECR image tag immutable, Image scanning, Encryption (3/3)",3.0,,
+Shanghai friendly 2026,,Computing instances reliability and scalability,ASG used and has target tracing policy and scale based on alb requests,3.0,,
+WorldSkills Lyon 2024 GameDay (Day1),Cost Optimization,Is Lifecycle Configuration set for S3,"Optimize storage costs, automate data management Requirement: Yes/No",0.5,,
+WorldSkills Lyon 2024 GameDay (Day1),Cost Optimization,Does APIGateway has tag,"Tags in APIGateway facilitate efficient resource management, cost allocation Requirement: Yes/No",0.5,,
+WorldSkills Lyon 2024 GameDay (Day1),Cost Optimization,Is AWS Batch used,Dynamically provisioning the optimal quantity and type of compute resources for batch job Requirement: Yes/No,1.0,,
+WorldSkills Lyon 2024 GameDay (Day1),Cost Optimization,Cost Ratio rate of the solution,Ratio of recommended deployment:Full (2 marks) if .2 <= [CostRatio] <= 1.0Half (1 mark) if 1 < [CostRatio] <= 2.0Partial (0.5 mark) if 2 < [CostRatio] <= 3.0 Requirement: .2<=[CR]<=1.0,2.0,,
+WorldSkills Lyon 2024 GameDay (Day2),Cost Optimization,Does ECS utilizes Fargate for running containers,"Seamless, scalable, and cost efficient container management solution Requirement: Yes/No",1.0,,
+WorldSkills Lyon 2024 GameDay (Day2),Cost Optimization,Does Lambda function has tag,"Tags in Lambda functions facilitate efficient resource management, cost allocation Requirement: Yes/No",0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Cost Optimization,Is Lifecycle Configuration set for ECR repository,Helps reduce costs by automatically deleting unused images Requirement: Yes/No,0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Cost Optimization,Cost Ratio rate of the solution,Ratio of recommended deployment:Full (2 marks) if .2 <= [CostRatio] <= 1.0Half (1 mark) if 1 < [CostRatio] <= 2.0Partial (0.5 mark) if 2 < [CostRatio] <= 3.0 Requirement: .2<=[CR]<=1.0,2.0,,
+WorldSkills Lyon 2024 GameDay (Day1),Operation Excellence,Is EventBridge Configured with Scheduler,Managing scheduled tasks and event-driven workflows Requirement: Yes/No,0.5,,
+WorldSkills Lyon 2024 GameDay (Day1),Operation Excellence,Has AWS Batch Successfully Executed,Efficiently manage batch computing workloads Requirement: Yes/No,1.0,,
+WorldSkills Lyon 2024 GameDay (Day1),Operation Excellence,Is S3 versioning enabled,Enhanced data protection and management capabilities Requirement: Yes/No,0.5,,
+WorldSkills Lyon 2024 GameDay (Day1),Operation Excellence,Does VPC Peering exist,Create a cohesive and secure network architecture that spans multiple VPCs Requirement: Yes/No,1.0,,
+WorldSkills Lyon 2024 GameDay (Day1),Operation Excellence,Is DynamoDB deletion protection is enabled,"Prevents accidental deletion of tables, ensuring data safety and continuity Requirement: Yes/No",0.5,,
+WorldSkills Lyon 2024 GameDay (Day1),Operation Excellence,Whether ECR image Tag is imutable,Ensure consistency and traceability by preventing changes to critical resource metadata Requirement: Yes/No,0.5,,
+WorldSkills Lyon 2024 GameDay (Day1),Operation Excellence,Does DynamoDB have tags,"Tags in DynamoDB facilitate efficient resource management, cost allocation Requirement: Yes/No",0.5,,
+WorldSkills Lyon 2024 GameDay (Day1),Operation Excellence,CodePipeline is created and used successfully,Automation of application deployment with CodePipeline Requirement: Yes/No,0.5,,
+WorldSkills Lyon 2024 GameDay (Day1),Operation Excellence,Is ECR endpoint configured,ECR Endpoint is secured and configured Requirement: Yes/No,0.5,,
+WorldSkills Lyon 2024 GameDay (Day1),Operation Excellence,Is DynamoDB used?,DynamoDB Table is created Requirement: Yes/No,0.5,,
+WorldSkills Lyon 2024 GameDay (Day1),Operation Excellence,CodeDeploy is created and used successfully,Automation of application deployment with CodeDeploy Requirement: Yes/No,0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Operation Excellence,Is S3 versioning enabled,Protects against accidental data loss Requirement: Yes/No,0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Operation Excellence,Does VPC has tag,"Tagging a VPC enables better organization, management, and cost tracking Requirement: Yes/No",0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Operation Excellence,Whether ECR image Tag is imutable,Ensure consistency and traceability by preventing changes to critical resource metadata Requirement: Yes/No,0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Operation Excellence,Does Guardduty has tag,"Enhances organization and visibility, facilitating easier management and prioritization of alerts Requirement: Yes/No",0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Operation Excellence,Is ECR endpoint configured,"Ensuring efficient, secure, and reliable access to container images. Requirement: Yes/No",0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Operation Excellence,Is DynamoDB endpoint configured,"Improves operational excellence by ensuring high availability, scalability, and optimized access to database resources. Requirement: Yes/No",0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Operation Excellence,Is S3 endpoint configured,"Ensuring efficient, secure, and reliable access to storage resources. Requirement: Yes/No",0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Operation Excellence,CodePipeline is created and used successfully,Automation of application deployment with CodePipeline Requirement: Yes/No,0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Operation Excellence,CodeBuild is created and used successfully,Automation of application deployment with CodeBuild Requirement: Yes/No,0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Operation Excellence,Is DynamoDB used?,DynamoDB Table is created Requirement: Yes/No,0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Operation Excellence,CodeDeploy is created and used successfully,Automation of application deployment with CodeDeploy Requirement: Yes/No,0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Operation Excellence,Is ALB log enabled,"Providing valuable insights into traffic patterns, helping to optimize application performance Requirement: Yes/No",1.0,,
+WorldSkills Lyon 2024 GameDay (Day2),Operation Excellence,Whether Kinesis Analysis has tag,"Enabling cost allocation, resource management, and compliance tracking across operational workflows Requirement: Yes/No",1.0,,
+WorldSkills Lyon 2024 GameDay (Day3),Operation Excellence,Challenge1,"Completed with 0 clues, full (2 marks) deduct 0.5 for each addtional clue used.",2.0,,
+WorldSkills Lyon 2024 GameDay (Day3),Operation Excellence,Challenge2,"Completed with 0 clues, full (2 marks) deduct 0.5 for each addtional clue used.",2.0,,
+WorldSkills Lyon 2024 GameDay (Day3),Operation Excellence,Challenge3,"Completed with 0 clues, full (2 marks) deduct 0.5 for each addtional clue used.",2.0,,
+WorldSkills Lyon 2024 GameDay (Day3),Operation Excellence,Challenge4,"Completed with 0 clues, full (2 marks) deduct 0.5 for each addtional clue used.",2.0,,
+WorldSkills Lyon 2024 GameDay (Day1),Security,Is the DynamoDB table encrypted,Enhance the security of Dynamodb data transfer Requirement: Yes/No,1.0,,
+WorldSkills Lyon 2024 GameDay (Day1),Security,Is S3 Encryption enabled,Provides a foundation for secure data storage and management in the cloud Requirement: Yes/No,1.0,,
+WorldSkills Lyon 2024 GameDay (Day1),Security,Is WAF configured,Enhances security by protecting your applications from common web exploits and vulnerabilities Requirement: Yes/No,2.0,,
+WorldSkills Lyon 2024 GameDay (Day1),Security,Are ECR Resource Policies Being Used,Secure access to your container images Requirement: Yes/No,1.0,,
+WorldSkills Lyon 2024 GameDay (Day1),Security,Is RDS Deletion Protection enabled,"Prevents accidental deletion of the database, ensuring operational continuity Requirement: Yes/No",1.0,,
+WorldSkills Lyon 2024 GameDay (Day1),Security,Does Codepipeline have approval stage,Enhances control and security by allowing manual verification and approval before progressing Requirement: Yes/No,0.5,,
+WorldSkills Lyon 2024 GameDay (Day1),Security,Is DynamoDB deletion protection is enabled,"Prevents accidental deletion of tables, ensuring data safety and continuity. Requirement: Yes/No",0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Security,No inbound rule allow traffic from SSH port in Security Group,Enhances network security by reducing exposure to potential unauthorized access Requirement: Yes/No,1.0,,
+WorldSkills Lyon 2024 GameDay (Day2),Security,No inbound rule of Security Group allow traffic from 0.0.0.0/0,Enhances network security by reducing exposure to potential unauthorized access Requirement: Yes/No,1.0,,
+WorldSkills Lyon 2024 GameDay (Day2),Security,Is S3 encrytion enabled,Enhances data security by protecting stored objects from unauthorized access or breaches Requirement: Yes/No,1.0,,
+WorldSkills Lyon 2024 GameDay (Day2),Security,Is GuardDuty enabled,Enhances AWS security by continuously monitoring for malicious activity Requirement: Yes/No,1.0,,
+WorldSkills Lyon 2024 GameDay (Day2),Security,Is Kinesis Data Streams encryption enabled,"Ensures data confidentiality and integrity, safeguarding sensitive information transmitted Requirement: Yes/No",1.0,,
+WorldSkills Lyon 2024 GameDay (Day2),Security,Is RDS Deletion Protection enabled,"Prevents accidental deletion of the database, ensuring operational continuity Requirement: Yes/No",1.0,,
+WorldSkills Lyon 2024 GameDay (Day2),Security,Does Codepipeline have approval stage,Enhances control and security by allowing manual verification and approval before progressing Requirement: Yes/No,0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Security,Is DynamoDB deletion protection is enabled,"Prevents accidental deletion of tables, ensuring data safety and continuity. Requirement: Yes/No",0.5,,
+WorldSkills Lyon 2024 GameDay (Day3),Security,Challenge5,"Completed with 0 clues, full (2 marks) deduct 0.5 for each addtional clue used.",2.0,,
+WorldSkills Lyon 2024 GameDay (Day3),Security,Challenge6,"Completed with 0 clues, full (2 marks) deduct 0.5 for each addtional clue used.",2.0,,
+WorldSkills Lyon 2024 GameDay (Day3),Security,Challenge7,"Completed with 0 clues, full (2 marks) deduct 0.5 for each addtional clue used.",2.0,,
+WorldSkills Lyon 2024 GameDay (Day3),Security,Complete task3 of Cloud Questing Challenge,Enhance security through advanced measures provided by cloud service providers Requirement: Yes/No,2.0,,
+WorldSkills Lyon 2024 GameDay (Day1),Reliability,Is the DynamoDB table backed up,Ensures data recovery and protection against accidental deletions or corruption Requirement: Yes/No,1.0,,
+WorldSkills Lyon 2024 GameDay (Day1),Reliability,Is VPC FlowLog enabled,Provides detailed visibility into network traffic Requirement: Yes/No,1.0,,
+WorldSkills Lyon 2024 GameDay (Day1),Reliability,Is RDS config logs,Enhances reliability by enabling continuous monitoring and quick identification of database issues Requirement: Yes/No,1.0,,
+WorldSkills Lyon 2024 GameDay (Day1),Reliability,Whether deletion protection is enabled for DynamoDB table,Prevents accidental loss of critical data Requirement: Yes/No,1.0,,
+WorldSkills Lyon 2024 GameDay (Day1),Reliability,Success Respose Rate (SRR) >= 90%,High SRR improve customer satisfaction Requirement: SRR >= 90%,0.5,,
+WorldSkills Lyon 2024 GameDay (Day1),Reliability,Success Respose Rate (SRR) >= 80%,High SRR improve customer satisfaction Requirement: SRR >= 80%,0.5,,
+WorldSkills Lyon 2024 GameDay (Day1),Reliability,Success Respose Rate (SRR) >= 70%,High SRR improve customer satisfaction Requirement: SRR >= 70%,0.5,,
+WorldSkills Lyon 2024 GameDay (Day1),Reliability,Success Respose Rate (SRR) >= 60%,High SRR improve customer satisfaction Requirement: SRR >= 60%,0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Reliability,Is VPC FlowLog enabled,Provides detailed visibility into network traffic Requirement: Yes/No,1.0,,
+WorldSkills Lyon 2024 GameDay (Day2),Reliability,Is CloudWatch Alarm enabled,Ensures real-time monitoring and alerts for system reliability Requirement: Yes/No,1.0,,
+WorldSkills Lyon 2024 GameDay (Day2),Reliability,Is ECS Container Insight enabled,Allows for detailed monitoring and troubleshooting of containerized applications Requirement: Yes/No,1.0,,
+WorldSkills Lyon 2024 GameDay (Day2),Reliability,Whether ECS has AutoScaling Policy (Tasks >= 2),Ensures high reliability by maintaining optimal task availability to handle varying loads Requirement: Yes/No,1.0,,
+WorldSkills Lyon 2024 GameDay (Day2),Reliability,Is ECS Task Definition logging enabled,Ensures effective monitoring and troubleshooting of containerized applications Requirement: Yes/No,0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Reliability,Whether ECR has policy,Ensures reliable management of container image access Requirement: Yes/No,0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Reliability,Success Respose Rate (SRR) >= 90%,High SRR improve customer satisfaction Requirement: SRR >= 90%,0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Reliability,Success Respose Rate (SRR) >= 80%,High SRR improve customer satisfaction Requirement: SRR >= 80%,0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Reliability,Success Respose Rate (SRR) >= 70%,High SRR improve customer satisfaction Requirement: SRR >= 70%,0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Reliability,Success Respose Rate (SRR) >= 60%,High SRR improve customer satisfaction Requirement: SRR >= 60%,0.5,,
+WorldSkills Lyon 2024 GameDay (Day3),Reliability,Challenge8,"Completed with 0 clues, full (2 marks) deduct 0.5 for each addtional clue used.",2.0,,
+WorldSkills Lyon 2024 GameDay (Day3),Reliability,Challenge9,"Completed with 0 clues, full (2 marks) deduct 0.5 for each addtional clue used.",2.0,,
+WorldSkills Lyon 2024 GameDay (Day3),Reliability,Challenge10,"Completed with 0 clues, full (2 marks) deduct 0.5 for each addtional clue used.",2.0,,
+WorldSkills Lyon 2024 GameDay (Day1),Performance Efficiency,Dynamodb capacity mode (On-demand/Provisioned),Allows for predictable performance with defined throughput Requirement: Yes/No,0.5,,
+WorldSkills Lyon 2024 GameDay (Day1),Performance Efficiency,API Gateway active tracing by X-Ray,Providing detailed insights into request latency and identifying performance bottlenecks Requirement: Yes/No,0.5,,
+WorldSkills Lyon 2024 GameDay (Day1),Performance Efficiency,Is ECS Service Being Used,"Automating deployment, scaling, and management of containerized applications Requirement: Yes/No",0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Performance Efficiency,Is CloudFront in use,"Caching content closer to users, reducing latency and enhancing scalability Requirement: Yes/No",0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Performance Efficiency,Is ALB in use,Intelligently distributing incoming application traffic across multiple targets Requirement: Yes/No,0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Performance Efficiency,API Gateway active tracing by X-Ray,Providing detailed insights into request latency and identifying performance bottlenecks Requirement: Yes/No,0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Performance Efficiency,Is Kinesis Analysis in use,"Enabling real-time analysis of streaming data, facilitating timely insights Requirement: Yes/No",0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Performance Efficiency,Is Kinesis Data Stream in use,Enabling real-time ingestion and processing of large-scale data streams Requirement: Yes/No,0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Performance Efficiency,Is Kinesis Data Stream provisioned shard = 1,Optimizes performance efficiency by providing cost-effective data ingestion and processing capabilities Requirement: Yes/No,0.5,,
+WorldSkills Lyon 2024 GameDay (Day2),Performance Efficiency,DynamoDB TTL is enabled,Optimizing storage and improving application performance Requirement: Yes/No,0.5,,
+WorldSkills Lyon 2024 GameDay (Day3),Performance Efficiency,Challenge11,"Completed with 0 clues, full (2 marks) deduct 0.5 for each addtional clue used.",2.0,,
+WorldSkills Lyon 2024 GameDay (Day3),Performance Efficiency,Challenge12,"Completed with 0 clues, full (2 marks) deduct 0.5 for each addtional clue used.",2.0,,
+WorldSkills Lyon 2024 GameDay (Day3),Performance Efficiency,Finish task2 of Cloud Questing challenge,Enhances performance efficiency by ensuring reliable execution of cloud-based operations Requirement: Yes/No,2.0,,
+WorldSkills Lyon 2024 GameDay (Day1),Sustainability,Is Parameter Store Intelligent-Tiering enabled,"Improves sustainability by automatically optimizing storage costs, reducing operational overhead Requirement: Yes/No",1.0,,
+WorldSkills Lyon 2024 GameDay (Day1),Sustainability,Is the backup retention period for the RDS database more than 7 days,Enhances sustainability by ensuring long-term data availability and recovery options Requirement: Yes/No,1.0,,
+WorldSkills Lyon 2024 GameDay (Day2),Sustainability,Is S3 lifecycle enabled,Reducing storage costs and environmental impact through efficient data lifecycle management Requirement: Yes/No,2.0,,
+WorldSkills Lyon 2024 GameDay (Day2),Sustainability,Is application running on ECS,"Reducing server idle time, and minimizing energy consumption Requirement: Yes/No",1.0,,
+WorldSkills Lyon 2024 GameDay (Day2),Sustainability,Is the backup retention period for the RDS database more than 7 days,Enhances sustainability by ensuring long-term data availability and recovery options Requirement: Yes/No,1.0,,
+WorldSkills Lyon 2024 GameDay (Day2),Sustainability,Is GuardDutyFindingExport enabled,Promoting resource conservation through streamlined operations Requirement: Yes/No,2.0,,
+WorldSkills Lyon 2024 GameDay (Day3),Sustainability,Finish task1 of Cloud Questing challenge,"Promoting efficient operational practices, thereby minimizing environmental impact Requirement: Yes/No",2.0,,
+WorldSkills Lyon 2024 GameDay (Day1),Work organization and management,Overall performance measured by system score board (Well Architecting 1),Player ranking: Full (2 marks) if players ranking 1 to 3 on the score board Half (1 mark) if players ranking 4 to 6 on the score board Partial (0.5 mark) if players ranking 7 to 10 on the scored board,2.0,,
+WorldSkills Lyon 2024 GameDay (Day2),Work organization and management,Overall performance measured by system score board (Well Architecting 2),Player ranking: Full (2 marks) if players ranking 1 to 3 on the score board Half (1 mark) if players ranking 4 to 6 on the score board Partial (0.5 mark) if players ranking 7 to 10 on the scored board,2.0,,
+WorldSkills Lyon 2024 GameDay (Day3),Work organization and management,Overall performance measured by system score board (Troubleshooting),Player ranking: Full (2 marks) if players ranking 1 to 3 on the score board Half (1 mark) if players ranking 4 to 6 on the score board Partial (0.5 mark) if players ranking 7 to 10 on the scored board,2.0,,
+WorldSkills Lyon 2024 GameDay (Day3),Work organization and management,Overall performance measured by system score board (Cloud Questing),Player ranking: Full (2 marks) if players ranking 1 to 3 on the score board Half (1 mark) if players ranking 4 to 6 on the score board Partial (0.5 mark) if players ranking 7 to 10 on the scored board,2.0,,
+Ireland Friendly 2024 - GameDay,,,Recover more easily from both unintended user actions and application failures.,2,0,
+Ireland Friendly 2024 - GameDay,,,Convenient to troubleshoot network problems.,2,0,
+Ireland Friendly 2024 - GameDay,,,Efficient way to categorize resources in different ways.,2,2,
+Ireland Friendly 2024 - GameDay,,,Logging scenario.,2,0,
+Ireland Friendly 2024 - GameDay,,,Not use default name space.,1,0,
+Ireland Friendly 2024 - GameDay,,,Cloudwatch Alarm to monitor instance status.,1,1,
+Ireland Friendly 2024 - GameDay,,,Assign resources least-privilege security policies and permissions (a).,1,0,
+Ireland Friendly 2024 - GameDay,,,Assign resources least-privilege security policies and permissions (b). ,1,0,
+Ireland Friendly 2024 - GameDay,,,Data encryption.,1,1,
+Ireland Friendly 2024 - GameDay,,,Limit the impact in the case of a leaked secret.,2,2,
+Ireland Friendly 2024 - GameDay,,,Use endpoint.,1,0,
+Ireland Friendly 2024 - GameDay,,,Data encryption in flight.,1,1,
+Ireland Friendly 2024 - GameDay,,,ECR security configuration.,3,3,
+Ireland Friendly 2024 - GameDay,,,Multi AZ.,1,1,
+Ireland Friendly 2024 - GameDay,,,Application able to serve public traffic across multiple local networks.,1,1,
+Ireland Friendly 2024 - GameDay,,,Efficiently distributing incoming network traffic.,2,2,
+Ireland Friendly 2024 - GameDay,,,Data Reliability.,2,2,
+Ireland Friendly 2024 - GameDay,,,Computing storage reliability and scalability.,3,3,
+Ireland Friendly 2024 - GameDay,,,EKS logging types.,3,3,
+Ireland Friendly 2024 - GameDay,,,Overall performance measured by system score board.,6,3.86,
+Ireland Friendly 2024 - GameDay,,,Cost Optimization,3,3,27 / 40
+Korea Friendly 2024 - GameDay,,,"Operation Excellence
+- Is S3 Versioning enabled? (Not complete)
+- Is VPC flow log enabled? (Not complete)",8,5,
+Korea Friendly 2024 - GameDay,,,"Security
+- Is there less than 2 secuirty groups having ingress rule (Not complete)
+- Is there secuirty group open port 22 to internet? (Not complete)
+- Secret rotation enabled for the secrets in secret manager (Not complete)
+- HTTPS URL submitted mean full marks (Not complete) ",11,5,
+Korea Friendly 2024 - GameDay,,,Reliablity,8,8,
+Korea Friendly 2024 - GameDay,,,"Performance Efficiency
+- Overall Performance measured by system scoreboard",10,6,
+Korea Friendly 2024 - GameDay,,,Overall Performance measured by system scoreboard,8,0.3,10.3 / 40
+ShenZhen Friendly 2024 - GameDay,,,Is there less than 2 secuirty groups having ingress rule,2,0,
+ShenZhen Friendly 2024 - GameDay,,,Is there secuirty group open port 22 to internet?,2,0,
+ShenZhen Friendly 2024 - GameDay,,,Is S3 bucket encryption enabled? - S3BucketEncrypted,2,2,
+ShenZhen Friendly 2024 - GameDay,,,Is the application deployed in a private subnet?,3,3,
+ShenZhen Friendly 2024 - GameDay,,,Are multi subnets defined accross AZs?,3,3,
+ShenZhen Friendly 2024 - GameDay,,,Is ASG being used?,3,0,
+ShenZhen Friendly 2024 - GameDay,,,Is the MaxSize of ASG less than 50?,3,0,
+ShenZhen Friendly 2024 - GameDay,,,Is ALB being used?,3,0,
+ShenZhen Friendly 2024 - GameDay,,,Is S3 Versioning enabled?,3,0,
+ShenZhen Friendly 2024 - GameDay,,,Is VPC flow log enabled?,3,0,
+ShenZhen Friendly 2024 - GameDay,,,Is EC2 instance tagged?,2,2,
+ShenZhen Friendly 2024 - GameDay,,,Is ALB log enabled?,3,0,
+ShenZhen Friendly 2024 - GameDay,Cost Optimization,Ratio of overall load to infrastructure deployment size,Ratio of recommended deployment size to actual. Full marks if .2 <= [CostRatio] <= 1.0,1.5,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Cost Optimization,Use of application caching solution.,"
+Has CloudFront been configured?",2,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Operational Excellence,"Recover more easily from both unintended user actions and application failures",Is S3 bucket versioning enabled ?,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Operational Excellence,Convenient to troubleshoot network problems,Is VPC flow log enabled ?,1,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Operational Excellence,Effient way to categorize resources in different ways,Is EC2 instance tagged ?,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Operational Excellence,Shorten system boot time,Is there any self baked AMI ?,1,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Operational Excellence,Cloudwatch Alarm to monitor instance status,"Has Cloudwatch alarm defined mean full marks, No Cloudwatch alarm defined mean zero mark",1,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Security,Assign resources least-privilege security policies and permissions,Is there less than 2 securiy groups having ingress rule which source is 0.0.0.0/0 ?,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Security,Assign resources least-privilege security policies and permissions,Is there securiry group open port 22 to internet ?,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Security,Database security,Is DynamoDB  encryption enabled?,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Security,Better isolation for computing instances,Is EC2 (besides bastion host) in private subnets ?,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Security,Data encryption,Is S3 bucket encryption enabled ?,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Security,Data encryption in flight,"HTTPS URL submitted mean full marks, HTTP URL submitted mean zero mark",0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Security,Assign resources least-privilege security policies and permissions,"By Judge
+
+3	All services (S3 and instances) are utilizing defined and recommended security policies
+2	Only Instances are utilizing defined security policies
+1	Only S3 are utilizing defined security policies
+0	No definied security policies",0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Reliability,Better isolation and reduce blast radius,Are multi subnets defined accros Azs ?,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Reliability,Application able to serve public traffic across multiple local networks,Are there multiple subnets in application deployment?,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Reliability,Efficiently distributing incoming network traffic,Is ALB used ?,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Reliability,Transaction timeout response rate per day,"Total network request timeouts
+< 10% receives full marks; < 20% receives half marks; < 40% receives quarter marks",1,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Reliability,Data Reliability,Is DynamoDB has backup configured,1,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Reliability,Computing instances reliability and scalability,"By Judge
+
+3        ASG used and has target tracing policy and scale based on alb requests
+2        ASG used and has target tracing policy
+1        ASG is used
+0        ASG not used",1,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Performancre Efficiency,Daily overall response time average,If less than 4 seconds mean full marks,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Performancre Efficiency,Percentage of messages accepted for process >=90% (Availability),Availability >90%,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Performancre Efficiency,Percentage of messages accepted for process >=80% (Availability),Availability 80% ~ 90%,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Performancre Efficiency,Percentage of messages accepted for process >=70% (Availability),Availability 70% ~ 80%,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Performancre Efficiency,Percentage of messages accepted for process >=60% (Availability),Availability 60% ~ 70%,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Performancre Efficiency,Percentage of messages accepted for process >=30% (Availability),Availability 30% ~ 60%,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Performancre Efficiency,Overall performance measured by system score board,"By Judge 
+
+3        Players 1 to 3 on the score board get  1.5 point
+2        Players 4 to 6 on the score board get 1 point
+1        Players 7 and 8 on the score board get 0.5 point
+0        All other player get 0 point",1.5,,
+Korea WSI 2022 Special Edition - GameDay (Day1),Cost Optimization,Ratio of overall load to infrastructure deployment size,Ratio of recommended deployment size to actual. Full marks if .2 <= [CostRatio] <= 1.0,1.5,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Cost Optimization,Use of application caching solution.,"
+Has CloudFront been configured?",2,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Operational Excellence,Recover more easily from both unintended user actions and application failures,Is S3 bucket versioning enabled ?,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Operational Excellence,Convenient to troubleshoot network problems,Is VPC flow log enabled ?,1,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Operational Excellence,Effient way to categorize resources in different ways,Is EC2 instance tagged ?,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Operational Excellence,Use network sharing file system,Is EFS used ?,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Operational Excellence,Sufficient logging for key EKS components,Is there at least 1 EKS logging type exsiting ?,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Operational Excellence,Cloudwatch Alarm to monitor instance status,"Has Cloudwatch alarm defined mean full marks, No Cloudwatch alarm defined mean zero mark",1,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Security,Assign resources least-privilege security policies and permissions,Is there less than 2 securiy groups having ingress rule which source is 0.0.0.0/0 ?,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Security,Assign resources least-privilege security policies and permissions,Is there securiry group open port 22 to internet ?,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Security,Data encryption,Is S3 bucket encryption enabled ?,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Security,Limit the impact in the case of a leaked secret,Secret rotation enabled for the secrets in secret manager,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Security,API server endpoint access,API server endpoint access (public & private),0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Security,Data encryption in flight,"HTTPS URL submitted mean full marks, HTTP URL submitted mean zero mark",0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Security,ECR security configration,"By Judge
+
+3        ECR image tag immutable, Image scanning, Encryption (3/3)
+2        ECR image tag immutable, Image scanning, Encryption (2/3)
+1        ECR image tag immutable, Image scanning, Encryption (1/3)
+0        No definied security policies",0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Reliability,Better isolation and reduce blast radius,Are multi subnets defined accros Azs ?,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Reliability,Application able to serve public traffic across multiple local networks,Are there multiple subnets in application deployment?,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Reliability,Efficiently distributing incoming network traffic,Is ALB used ?,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Reliability,Transaction timeout response rate per day,"Total network request timeouts
+< 10% receives full marks; < 20% receives half marks; < 40% receives quarter marks",1,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Reliability,Data Reliability,Has RDS backup been configured?,1,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Reliability,Computing instances reliability and scalability,"By Judge
+
+3	ASG used and has target tracing policy and scale based on alb requests
+2	ASG used and has target tracing policy
+1	ASG is used
+0	ASG not used",1,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Performancre Efficiency,Daily overall response time average,If less than 4 seconds full marks,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Performancre Efficiency,Add exception handling to simplify the flow of control,If larger than 10 full marks,1,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Performancre Efficiency,Percentage of messages accepted for process >=90% (Availability),Availability >90%,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Performancre Efficiency,Percentage of messages accepted for process >=80% (Availability),Availability 80% ~ 90%,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Performancre Efficiency,Percentage of messages accepted for process >=70% (Availability),Availability 70% ~ 80%,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Performancre Efficiency,Percentage of messages accepted for process >=60% (Availability),Availability 60% ~ 70%,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Performancre Efficiency,Percentage of messages accepted for process >=30% (Availability),Availability 30% ~ 60%,0.5,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Performancre Efficiency,Overall performance measured by system score board,"By Judge 
+
+3	Players 1 to 3 on the score board get  1.5 point
+2	Players 4 to 6 on the score board get 1 point
+1	Players 7 and 8 on the score board get 0.5 point
+0	All other players get 0 point",1.5,,
+Korea WSI 2022 Special Edition - GameDay (Day2),Cost Optimization,"Ratio of overall load to infrastructure deployment size
+Use of application caching solution.
+","Ratio of recommended deployment size to actual. Full marks if   .4 <= [CostRatio]  <= 2.2
+Ratio of recommended deployment size to actual. Full marks if   .4 <= [CostRatio]  <= 1.7
+Ratio of recommended deployment size to actual. Full marks if  .4 <= [CostRatio] <= 1.4
+Has an application HTTP caching solution been configured?
+","0.50
+1.00
+1.50
+2.00
+",,
+Russia 2019 World Skill Competition,Cost Optimization,"Ratio of overall load to infrastructure deployment size
+Use of application caching solution.
+","Ratio of recommended deployment size to actual. Full marks if   .4 <= [CostRatio]  <= 2.2
+Ratio of recommended deployment size to actual. Full marks if   .4 <= [CostRatio]  <= 1.7
+Ratio of recommended deployment size to actual. Full marks if  .4 <= [CostRatio] <= 1.4
+Has an application HTTP caching solution been configured?
+","0.50
+1.00
+1.50
+2.00
+",,
+Russia 2019 World Skill Competition,Operational Excellence,"1.Primary database deployed and operational
+
+2.Secondary database deployed and operational
+
+3.Local shared file storage operational
+
+4.Automation of exception/refund responses.
+
+5.Web apps served by auto-scaling infrastructure
+
+6.Limited operational impact to system/network outage.
+","1.Is the primary application serving results?
+
+2.Is the stub application serving results?
+
+3.Is there a shared file storage solution in place?
+
+4.Once students are hands off of their architectures, can a single refund be processed
+
+5.Full marks: all web apps successfully routed to endpoints served by auto scaling, demand driven infra. Half marks if 1+ app does. Zero marks if no endpoints do.","1.0.50
+2.0.50
+3.0.50
+4.1.00
+5.2.00
+",,
+Russia 2019 World Skill Competition,Operational Excellence,Automation of application deployment process,"0:Neither all instance scaling or high-level services are deployed in a multi-AZ configuration
+1:Either all higher level services or instance scaling is spread across multi-AZ and subnets
+2:Acceptable and meets industry standard - ELB, EC2
+3: All services span multiple availability zones and subnets, HTTP Caching multi AZ
+
+0:No automation in place
+1:There is minimal process automation in place with ASG but manual scaling.
+2:Majority of processes are automated, ASG with automated scaling metrics configured
+3:Full solutions deployments are automated with memcached solution and automated refunds.",,,
+Russia 2019 World Skill Competition,Operational Excellence,"1.Root Application Successes
+
+2.Lookup Application Successes
+
+3.URL routing configured according to documentation
+
+4.Automation of exception/refund responses.
+
+5.Web apps served by auto-scaling infrastructure
+
+6.Feline Takeover Module Complete
+
+7.Limited operational impact to system/network outage.
+","1.Is the Root application serving results?
+
+2.Is the Lookup application serving results?
+
+3.Web traffic is configured to route traffic from documented URLs to multiple different endpoints
+
+4.Once students are hands off of their architectures, can a single refund be processed
+
+5.Full marks: all web apps successfully routed to endpoints served by auto scaling, demand driven infra. Half marks if 1+ app does. Zero marks if no endpoints do.
+
+","1. 0.50
+
+2. 0.50
+
+3. 1.00
+
+4. 1.00
+
+5. 2.00
+
+6. 0.50
+
+7. 1.00
+",,
+Russia 2019 World Skill Competition,Operational Excellence,1.Automation of application deployment process,"0: Neither all instance scaling or high-level services are deployed in a multi-AZ configuration
+1: Either all higher level services or instance scaling is spread across multi-AZ and subnets
+2: Acceptable and meets industry standard - ELB, EC2
+3: All services span multiple availability zones and subnets, HTTP Caching multi AZ
+
+0:No automation in place
+1:There is minimal process automation in place with ASG but manual scaling.
+2:Majority of processes are automated, ASG with automated scaling metrics configured
+3:Full solutions deployments are automated with memcached solution and automated refunds.
+",1,,
+Russia 2019 World Skill Competition,Operational Excellence,"1.Automated Incident Response
+2.Automated Incident Response
+3.Automated Incident Response
+4.Automated Incident Response
+","1.Automated Incident Response Challenge Completed Less than all Clues used mean full marks, All Clues used mean zero mark
+
+2.Automated Incident Response Challenge Completed <= 2 Clues used mean full marks, more than 2 clues used mean zero mark
+
+3.Automated Incident Response Challenge Completed <=1 Clues used mean full marks, more than 1 clues used mean zero mark
+
+4.Automated Incident Response Challenge Completed 0 Clues used mean full marks, more than 0 clues used mean zero mark
+","1. 0.50
+
+2. 0.50
+
+3. 1.00
+
+4. 1.00
+",,
+Russia 2019 World Skill Competition,Operational Excellence,"1.Identify and Mitigate Configuration Drift
+2.Identify and Mitigate Configuration Drift
+3.Identify and Mitigate Configuration Drift
+4.Identify and Mitigate Configuration Drift
+","1.Identify and Mitigte Configuration Drift Challenge Completed Less than all Clues used mean full marks, All Clues used mean zero mark
+
+2.Identify and Mitigte Configuration Drift Challenge Completed <= 2 Clues used mean full marks, more than 2 clues used mean zero mark
+
+3.Identify and Mitigte Configuration Drift Challenge Completed <=1 Clues used mean full marks, more than 1 clues used mean zero mark
+
+4.Identify and Mitigte Configuration Drift Challenge Completed 0 Clues used mean full marks, more than 0 clues used mean zero mark
+","1. 0.50
+2. 0.50
+3. 1.00
+4. 1.00
+",,
+Russia 2019 World Skill Competition,Security,"1.Public access to database or database cache?
+
+2.Assign resources least-privilege security policies and permissions
+","1.Blocks unrestricted network access to cache database or production database?
+
+2.All services (S3 and instances) are utilizing defined and recommended security policies = 1 mark
+3.Only Instances are utilizing defined security policies
+4.Only S3 are utilizing defined security policies
+5. No definied security policies
+","1. 2.00
+2. 2.00",,
+Russia 2019 World Skill Competition,Security,"1.Does the application block suspected web attacks?
+2.Reject traffic from known malicious sources
+3.Reject traffic from known malicious sources
+4.Reject traffic from known malicious sources
+5.Completed S3 Access Module
+","1.If greater than 50% of web attacks are blocked?
+
+2.% of packets from bad IPs/subnets blocked >10% Full marks
+
+3.% of packets from bad IPs/subnets blocked  >30% Full marks
+
+4.% of packets from bad IPs/subnets blocked  >60% Full marks
+
+5.S3 Access Module Completed
+
+6.No Marks: All clues used
+
+7.0,67 Marks: 2 Clues used
+
+8.1,33 Marks 1 Clue used
+
+9.Full Marks: No Clues
+","1. 2.00
+
+2. 1.00
+
+3.1.00
+
+4.1.00
+
+5. 2.00",,
+Russia 2019 World Skill Competition,Security,"1.Perfect World
+2.Perfect World
+3.Perfect World
+4.Perfect World
+6.Too Many Secrets
+7.Too Many Secrets
+8.Too Many Secrets
+9.Too Many Secrets
+","1.Perfect World Module Completed Less than all Clues used mean full marks, All Clues used mean zero mark
+
+2.Perfect World Module Completed <= 2 Clues used mean full marks, more than 2 clues used mean zero mark
+
+3.Perfect World Module Completed <=1 Clues used mean full marks, more than 1 clues used mean zero mark
+
+4.Perfect World Module Completed 0 Clues used mean full marks, more than 0 clues used mean zero mark
+
+5.Too many Secretes Module Completed Less than all Clues used mean full marks, All Clues used mean zero mark
+
+6.Too many Secretes Module Completed <= 2 Clues used mean full marks, more than 2 clues used mean zero mark
+
+8.Too many Secretes Module Completed <=1 Clues used mean full marks, more than 1 clues used mean zero mark
+
+9.Too many Secretes Module Completed 0 Clues used mean full marks, more than 0 clues used mean zero mark
+","1.0.50
+
+2.0.50
+
+3.1.00
+
+4.1.00
+
+6.0.50
+
+7.0.50
+
+9.1.00
+
+10.1.00
+",,
+Russia 2019 World Skill Competition,Security,"1.Find the Rogue Script
+
+2.Find the Rogue Script
+
+3.Find the Rogue Script
+
+4.Find the Rogue Script
+
+5.Strengthen API Defense
+
+6.Strengthen API Defense
+
+7.Strengthen API Defense
+
+8.Strengthen API Defense
+","1.Find the Rogue Script Module Completed Less than all Clues used mean full marks, All Clues used mean zero mark
+
+2.Find the Rogue Script Module Completed <= 2 Clues used mean full marks, more than 2 clues used mean zero mark
+
+3.Find the Rogue Script Module Completed <=1 Clues used mean full marks, more than 1 clues used mean zero mark
+
+4.Find the Rogue Script Module Completed 0 Clues used mean full marks, more than 0 clues used mean zero mark
+
+5.Strengthen API Defense Module Completed Less than all Clues used mean full marks, All Clues used mean zero mark
+
+6.Strengthen API Defense Module Completed <= 2 Clues used mean full marks, more than 2 clues used mean zero mark
+
+7.Strengthen API Defense Module Completed <=1 Clues used mean full marks, more than 1 clues used mean zero mark
+
+8.Strengthen API Defense Module Completed 0 Clues used mean full marks, more than 0 clues used mean zero mark
+","1.0.50
+
+2.0.50
+
+3.1.00
+
+4.1.00
+
+5.1.00
+
+6.1.00
+
+7.1.00
+
+8. 2.00
+",,
+Russia 2019 World Skill Competition,Reliability,"1.Application able to serve public traffic across multiple local networks
+
+2.Application continues to serve requests against high load.
+
+3.Application maintains an operational state during local network failure
+
+4.Network traffic isolation in place
+
+5.Transaction timeout response rate per day
+","1.Is there use of multiple subnets in application deployment (EC2 only)?
+
+2.Is the application still servering requests after load has been set to 200 for 10 minutes?
+
+3.In the event of a subnet failure, does the security model allow for the continued serving of traffic?
+
+4.Are deployed internal-only services not available externally?
+
+5.Total network request timeouts
+< 10% receives full marks; < 20% receives half marks; < 40% receives quarter marks""
+","1.2.00
+
+2.2.00
+
+3.2.00
+
+4.2.00
+
+5.2.00
+",,
+Russia 2019 World Skill Competition,Reliability,"1.Both applications able to serve public traffic across multiple local networks
+2.Application continues to serve requests against high load.
+3.Application maintains an operational state during local network failure
+4.Network traffic isolation in place
+5.Transaction timeout response rate per day
+","1.Is there use of multiple subnets in application deployment (EC2 only)?
+
+2.Is the application still servering requests after load has been set to 200 for 10 minutes?
+
+3.In the event of a subnet failure, does the security model allow for the continued serving of traffic?
+
+4.Are deployed internal-only services not available externally?
+
+5.""Total network request timeouts
+< 10% receives full marks; < 20% receives half marks; < 40% receives quarter marks""
+","1.2.00
+
+2.2.00
+
+3.2.00
+
+4.2.00
+
+5.2.00
+",,
+Russia 2019 World Skill Competition,Reliability,"1.High Availability
+
+2.High Availability
+
+3.High Availability
+
+4.High Availability
+","1.High Availability Module Completed Less than all Clues used mean full marks, All Clues used mean zero mark
+
+2.High Availability Module Completed <= 2 Clues used mean full marks, more than 2 clues used mean zero mark
+
+3.High Availability Module Completed <=1 Clues used mean full marks, more than 1 clues used mean zero mark
+
+4.High Availability Module Completed 0 Clues used mean full marks, more than 0 clues used mean zero mark
+","1.1.00
+
+2.1.00
+
+3.1.00
+
+4.2.00
+",,
+Russia 2019 World Skill Competition,Performancre Efficiency,"1.Application response time in milliseconds lowest
+
+2.Application response time in milliseconds lowest
+
+3.Identified infrastructure scales to meet demand.
+
+4.Daily overall response time average
+
+5.Percentage of messages accepted for process.
+","1.Lowest response rate in milliseconds recorded < 500ms Full marks
+
+2.Lowest response rate in milliseconds recorded  < 100ms Full marks
+
+3.Application scales once competitors are hands off
+
+4.If less than 2 seconds full marks
+
+5.Total percentage per day of messages accepted for processing by infrastructure.
+Full marks for >80%. 50% marks for >70%. 70% or less = no marks
+","1.1.25
+
+2.1.25
+
+3.2.00
+
+4.2.00
+
+5.1.00
+",,
+Russia 2019 World Skill Competition,Performancre Efficiency,"1.Application response time in milliseconds lowest
+
+2.Application response time in milliseconds lowest
+
+3.Identified infrastructure scales to meet demand.
+
+4.Daily overall response time average
+
+5.Percentage of messages accepted for process.
+
+6.Monoliths to Containers Migration complete
+
+7.Monoliths to Containers Migration complete
+
+8.Monoliths to Containers Migration complete
+
+9.Monoliths to Containers Migration complete
+","1.Lowest response rate in milliseconds recorded < 500ms Full marks
+
+2.Lowest response rate in milliseconds recorded  < 100ms Full marks
+
+3.Application scales once competitors are hands off
+
+4.If less than 2 seconds full marks
+
+5.Total percentage per day of messages accepted for processing by infrastructure.
+
+Full marks for >80%. 50% marks for >70%. 70% or less = no marks
+
+6.Monoliths to Containers Migration Module Completed Less than all Clues used mean full marks, All Clues used mean zero mark
+
+7.Monoliths to Containers Migration Module Completed <= 2 Clues used mean full marks, more than 2 clues used mean zero mark
+
+8.Monoliths to Containers Migration Module Completed <=1 Clues used mean full marks, more than 1 clues used mean zero mark
+
+9.Monoliths to Containers Migration Module Completed 0 Clues used mean full marks, more than 0 clues used mean zero mark
+","1.1.25
+
+2.1.25
+
+3.2.00
+
+4.2.00
+
+5.1.00
+
+
+6.1.00
+
+7.1.00
+
+8.1.00
+
+9.2.00
+",,
+Russia 2019 World Skill Competition,,,,,,
