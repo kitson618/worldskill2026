@@ -46,6 +46,21 @@ chmod 700 get_helm.sh
 ./get_helm.sh
 ```
 
+## Linux Install Kubectl
+```bash
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+chmod +x ./kubectl
+sudo mv ./kubectl /usr/local/bin/kubectl
+```
+
+## Linux Install K9S
+```bash
+curl -LO https://github.com/derailed/k9s/releases/latest/download/k9s_Linux_amd64.tar.gz
+tar -xzf k9s_Linux_amd64.tar.gz
+sudo mv k9s /usr/local/bin/
+rm k9s_Linux_amd64.tar.gz
+```
+
 ## Linux Install Docker
 
 ```bash
@@ -58,6 +73,12 @@ sudo usermod -a -G docker ec2-user
 ```bash
 sudo curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
+```
+
+## Linux Install Yazi
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv tool install yazi-bin
 ```
 
 ## NAT Instance
@@ -102,7 +123,6 @@ sudo iptables -t nat -A POSTROUTING -o ens5 -s 0.0.0.0/0 -j MASQUERADE
 sudo /sbin/iptables -F FORWARD
 sudo service iptables save
 ```
-
 
 ```
 sudo cat /var/log/cloud-init-output.log
