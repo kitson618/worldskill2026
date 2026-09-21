@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: WorldSkills practice - HTTP API, Lambda and encrypted DynamoDB table
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: worldskills-api
+
+Resources:
+  DataTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 10
+      MemorySize: 128
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DataTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DataTable
+      InlineCode: |
+        import json
+        import os
+        import boto3
+        import uuid
+
+        table = boto3.resource('dynamodb').Table(os.environ['TABLE_NAME'])
+
+        def handler(event, context):
+            method = event.get('requestContext', {}).get('http', {}).get('method')
+            if method == 'POST':
+                body = json.loads(event.get('body') or '{}')
+                item = {'id': str(uuid.uuid4()), 'message': body.get('message', '')}
+                table.put_item(Item=item)
+                return {'statusCode': 201, 'body': json.dumps(item)}
+            result = table.scan(Limit=20)
+            return {'statusCode': 200, 'body': json.dumps(result.get('Items', []))}
+      Events:
+        GetItems:
+          Type: HttpApi
+          Properties:
+            Path: /items
+            Method: GET
+        CreateItem:
+          Type: HttpApi
+          Properties:
+            Path: /items
+            Method: POST
+
+  ErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Lambda function error alarm
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref ApiFunction
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+Outputs:
+  ApiUrl:
+    Value: !Sub 'https://${ServerlessHttpApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/items'
+  TableName:
+    Value: !Ref DataTable
+  FunctionName:
+    Value: !Ref ApiFunction
