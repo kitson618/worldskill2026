@@ -124,8 +124,9 @@ function Get-FileArg([string]$Path) {
 function New-JsonList {
     param([Parameter(ValueFromRemainingArguments = $true)][object[]]$Items)
     $list = New-Object 'System.Collections.Generic.List[object]'
-    foreach ($item in $Items) { [void]$list.Add($item) }
-    return $list
+    foreach ($item in @($Items)) { [void]$list.Add($item) }
+    # A bare return enumerates a one-item list, so AWS sees Rules as an object.
+    return ,$list
 }
 
 function Invoke-AwsRaw {
@@ -153,6 +154,22 @@ function Get-AwsJson {
 function Invoke-Aws {
     param([Parameter(ValueFromRemainingArguments = $true)][string[]]$AwsArgs)
     [void](Invoke-AwsRaw @AwsArgs)
+}
+
+function Invoke-AwsCreateBucket([string]$Bucket) {
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    $output = & aws s3api create-bucket --bucket $Bucket --region $env:REGION 2>&1
+    $code = $LASTEXITCODE
+    $ErrorActionPreference = $prev
+    if ($code -eq 0) { return }
+    $text = (($output | ForEach-Object { $_.ToString() }) -join "`n")
+    if ($text -match 'BucketAlreadyOwnedByYou') {
+        Write-Log "bucket $Bucket already exists, continuing"
+        return
+    }
+    if ($text) { Write-Host $text }
+    throw "aws s3api create-bucket --bucket $Bucket failed with exit $code"
 }
 
 function Save-State {
@@ -221,7 +238,7 @@ function New-RouteTable([string]$VpcId, [string]$TableName) {
 function Build-Bucket([string]$Account) {
     $bucket = "${Name}-logs-${Account}-use1"
     Write-Log "S3 log bucket $bucket"
-    Invoke-Aws s3api create-bucket --bucket $bucket --region us-east-1
+    Invoke-AwsCreateBucket $bucket
     Invoke-Aws s3api put-public-access-block --bucket $bucket --public-access-block-configuration `
         'BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true'
     Invoke-Aws s3api put-bucket-versioning --bucket $bucket --versioning-configuration Status=Enabled

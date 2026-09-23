@@ -167,7 +167,13 @@ build_bucket() {
   local account="$1"
   local bucket="${NAME}-logs-${account}-use1"
   log "S3 log bucket $bucket"
-  aws s3api create-bucket --bucket "$bucket" --region us-east-1 >/dev/null
+  if ! err="$(aws s3api create-bucket --bucket "$bucket" --region us-east-1 2>&1 >/dev/null)"; then
+    if [[ "$err" != *BucketAlreadyOwnedByYou* ]]; then
+      echo "$err" >&2
+      exit 1
+    fi
+    log "bucket $bucket already exists, continuing"
+  fi
   aws s3api put-public-access-block --bucket "$bucket" --public-access-block-configuration \
     BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
   aws s3api put-bucket-versioning --bucket "$bucket" --versioning-configuration Status=Enabled
