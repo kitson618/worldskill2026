@@ -8,6 +8,7 @@
 
 | 檔案 | 用途 |
 |---|---|
+| `config.env` | 共用設定：VPC 名稱、CIDR、`ENV=prd`、實例類型 |
 | `create.ps1` | Windows PowerShell 5.1 / PowerShell 7 |
 | `create.sh` | bash（macOS / Linux） |
 | `wa-state.json` | PowerShell 建立後寫入，`destroy` 用。不要提交 |
@@ -41,13 +42,41 @@ chmod +x create.sh
 ./create.sh
 ```
 
+## 設定
+
+所有變數在 [config.env](config.env)。`create.sh` 和 `create.ps1` 讀同一份。已存在的環境變數優先於檔案。
+
+```text
+REGION=us-east-1
+NAME=wa
+ENV=prd
+VPC_NAME=wa-vpc
+VPC_CIDR=10.0.0.0/16
+PUBLIC_CIDR_1=10.0.0.0/24
+PUBLIC_CIDR_2=10.0.1.0/24
+PRIVATE_CIDR_1=10.0.10.0/24
+PRIVATE_CIDR_2=10.0.11.0/24
+ISOLATED_CIDR_1=10.0.20.0/24
+ISOLATED_CIDR_2=10.0.21.0/24
+INSTANCE_TYPE=t3.micro
+BASTION_SSH_CIDR=
+```
+
+`ENV` 會寫成每個資源的 tag `env`。預設是 `prd`。改 VPC 名稱或 CIDR 只改這個檔，不要改腳本。`REGION` 必須是 `us-east-1`，因為 CloudFront WAF 只能建在這個區域。
+
 可選參數：
 
-| PowerShell | bash 環境變數 | 預設 | 說明 |
-|---|---|---|---|
-| `-Name wa` | `NAME` | `wa` | 資源名稱前綴 |
-| `-InstanceType t3.micro` | `INSTANCE_TYPE` | `t3.micro` | bastion 與應用實例 |
-| `-BastionSshCidr 203.0.113.10/32` | `BASTION_SSH_CIDR` | 目前公網 IP `/32` | bastion SSH 來源 |
+| 變數 | 預設 | 說明 |
+|---|---|---|
+| `NAME` | `wa` | 資源名稱前綴，也是 `Project` tag |
+| `ENV` | `prd` | tag `env` 的值 |
+| `VPC_NAME` | `wa-vpc` | VPC 的 Name tag |
+| `VPC_CIDR` | `10.0.0.0/16` | VPC CIDR |
+| `PUBLIC_CIDR_1` / `PUBLIC_CIDR_2` | `10.0.0.0/24`、`10.0.1.0/24` | 公網 |
+| `PRIVATE_CIDR_1` / `PRIVATE_CIDR_2` | `10.0.10.0/24`、`10.0.11.0/24` | 私網 |
+| `ISOLATED_CIDR_1` / `ISOLATED_CIDR_2` | `10.0.20.0/24`、`10.0.21.0/24` | 隔離網 |
+| `INSTANCE_TYPE` | `t3.micro` | bastion 與應用實例 |
+| `BASTION_SSH_CIDR` | 空，表示目前公網 IP `/32` | bastion SSH 來源 |
 
 名稱在區域內必須唯一。已有 `wa-state.json` 或 `wa-state.env` 時，腳本會拒絕再建一次。
 

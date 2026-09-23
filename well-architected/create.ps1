@@ -16,11 +16,7 @@
 param(
     [Parameter(Position = 0)]
     [ValidateSet('up', 'create', 'destroy', 'down')]
-    [string]$Action = 'up',
-
-    [string]$Name = $(if ($env:NAME) { $env:NAME } else { 'wa' }),
-    [string]$InstanceType = $(if ($env:INSTANCE_TYPE) { $env:INSTANCE_TYPE } else { 't3.micro' }),
-    [string]$BastionSshCidr = $env:BASTION_SSH_CIDR
+    [string]$Action = 'up'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -37,10 +33,45 @@ $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $script:StateFile = if ($env:STATE_FILE) { $env:STATE_FILE } else { Join-Path $Root 'wa-state.json' }
 $script:WorkDir = $null
 $script:S = @{}
-$VpcCidr = '10.0.0.0/16'
-$PublicCidrs = @('10.0.0.0/24', '10.0.1.0/24')
-$PrivateCidrs = @('10.0.10.0/24', '10.0.11.0/24')
-$IsolatedCidrs = @('10.0.20.0/24', '10.0.21.0/24')
+
+function Import-WaConfig {
+    $path = if ($env:CONFIG_FILE) { $env:CONFIG_FILE } else { Join-Path $Root 'config.env' }
+    if (-not (Test-Path -LiteralPath $path)) { throw "missing config file: $path" }
+    foreach ($raw in [System.IO.File]::ReadAllLines($path)) {
+        $line = $raw
+        $hash = $line.IndexOf('#')
+        if ($hash -ge 0) { $line = $line.Substring(0, $hash) }
+        $line = $line.Trim()
+        if (-not $line) { continue }
+        $eq = $line.IndexOf('=')
+        if ($eq -lt 1) { throw "bad config line: $raw" }
+        $key = $line.Substring(0, $eq).Trim()
+        $val = $line.Substring($eq + 1).Trim()
+        if ($key -notmatch '^[A-Z][A-Z0-9_]*$') { throw "bad config key: $key" }
+        if (-not (Test-Path -LiteralPath "Env:$key")) {
+            Set-Item -Path "Env:$key" -Value $val
+        }
+    }
+    foreach ($required in @(
+        'REGION', 'NAME', 'ENV', 'VPC_NAME', 'VPC_CIDR',
+        'PUBLIC_CIDR_1', 'PUBLIC_CIDR_2', 'PRIVATE_CIDR_1', 'PRIVATE_CIDR_2',
+        'ISOLATED_CIDR_1', 'ISOLATED_CIDR_2', 'INSTANCE_TYPE'
+    )) {
+        $current = [Environment]::GetEnvironmentVariable($required)
+        if ([string]::IsNullOrWhiteSpace($current)) { throw "set $required in $path" }
+    }
+    if ($env:REGION -ne 'us-east-1') { throw 'REGION must be us-east-1 (CloudFront WAF)' }
+    $env:AWS_DEFAULT_REGION = $env:REGION
+    $env:AWS_REGION = $env:REGION
+    $script:Name = $env:NAME
+    $script:Env = $env:ENV
+    $script:VpcName = $env:VPC_NAME
+    $script:VpcCidr = $env:VPC_CIDR
+    $script:InstanceType = $env:INSTANCE_TYPE
+    $script:PublicCidrs = @($env:PUBLIC_CIDR_1, $env:PUBLIC_CIDR_2)
+    $script:PrivateCidrs = @($env:PRIVATE_CIDR_1, $env:PRIVATE_CIDR_2)
+    $script:IsolatedCidrs = @($env:ISOLATED_CIDR_1, $env:ISOLATED_CIDR_2)
+}
 
 function Write-Log([string]$Message) {
     Write-Host "==> $Message"
@@ -173,7 +204,7 @@ function New-RandomHex([int]$Bytes = 24) {
 
 function New-Subnet([string]$VpcId, [string]$Cidr, [string]$Az, [bool]$Public, [string]$SubnetName) {
     $id = Get-AwsText ec2 create-subnet --vpc-id $VpcId --cidr-block $Cidr --availability-zone $Az `
-        --tag-specifications "ResourceType=subnet,Tags=[{Key=Name,Value=$SubnetName},{Key=Project,Value=$Name}]" `
+        --tag-specifications "ResourceType=subnet,Tags=[{Key=Name,Value=$SubnetName},{Key=Project,Value=$Name},{Key=env,Value=$script:Env}]" `
         --query Subnet.SubnetId
     if ($Public) {
         Invoke-Aws ec2 modify-subnet-attribute --subnet-id $id --map-public-ip-on-launch
@@ -183,7 +214,7 @@ function New-Subnet([string]$VpcId, [string]$Cidr, [string]$Az, [bool]$Public, [
 
 function New-RouteTable([string]$VpcId, [string]$TableName) {
     return Get-AwsText ec2 create-route-table --vpc-id $VpcId `
-        --tag-specifications "ResourceType=route-table,Tags=[{Key=Name,Value=$TableName},{Key=Project,Value=$Name}]" `
+        --tag-specifications "ResourceType=route-table,Tags=[{Key=Name,Value=$TableName},{Key=Project,Value=$Name},{Key=env,Value=$script:Env}]" `
         --query RouteTable.RouteTableId
 }
 
@@ -271,21 +302,21 @@ function Build-Bucket([string]$Account) {
             })
     }
     Invoke-Aws s3api put-bucket-policy --bucket $bucket --policy (Get-FileArg $policyPath)
-    Invoke-Aws s3api put-bucket-tagging --bucket $bucket --tagging "TagSet=[{Key=Name,Value=$bucket},{Key=Project,Value=$Name}]"
+    Invoke-Aws s3api put-bucket-tagging --bucket $bucket --tagging "TagSet=[{Key=Name,Value=$bucket},{Key=Project,Value=$Name},{Key=env,Value=$script:Env}]"
     Set-State BUCKET $bucket
 }
 
 function Build-Network([string]$Az1, [string]$Az2) {
     Write-Log "VPC $VpcCidr"
     $vpc = Get-AwsText ec2 create-vpc --cidr-block $VpcCidr `
-        --tag-specifications "ResourceType=vpc,Tags=[{Key=Name,Value=${Name}-vpc},{Key=Project,Value=$Name}]" `
+        --tag-specifications "ResourceType=vpc,Tags=[{Key=Name,Value=$script:VpcName},{Key=Project,Value=$Name},{Key=env,Value=$script:Env}]" `
         --query Vpc.VpcId
     Invoke-Aws ec2 modify-vpc-attribute --vpc-id $vpc --enable-dns-support
     Invoke-Aws ec2 modify-vpc-attribute --vpc-id $vpc --enable-dns-hostnames
     Set-State VPC_ID $vpc
 
     $igw = Get-AwsText ec2 create-internet-gateway `
-        --tag-specifications "ResourceType=internet-gateway,Tags=[{Key=Name,Value=${Name}-igw},{Key=Project,Value=$Name}]" `
+        --tag-specifications "ResourceType=internet-gateway,Tags=[{Key=Name,Value=${Name}-igw},{Key=Project,Value=$Name},{Key=env,Value=$script:Env}]" `
         --query InternetGateway.InternetGatewayId
     Invoke-Aws ec2 attach-internet-gateway --internet-gateway-id $igw --vpc-id $vpc
     Set-State IGW_ID $igw
@@ -316,16 +347,16 @@ function Build-Network([string]$Az1, [string]$Az2) {
 
     Write-Log 'NAT Gateway per AZ (private subnets only)'
     $eip1 = Get-AwsText ec2 allocate-address --domain vpc `
-        --tag-specifications "ResourceType=elastic-ip,Tags=[{Key=Name,Value=${Name}-nat-a},{Key=Project,Value=$Name}]" `
+        --tag-specifications "ResourceType=elastic-ip,Tags=[{Key=Name,Value=${Name}-nat-a},{Key=Project,Value=$Name},{Key=env,Value=$script:Env}]" `
         --query AllocationId
     $eip2 = Get-AwsText ec2 allocate-address --domain vpc `
-        --tag-specifications "ResourceType=elastic-ip,Tags=[{Key=Name,Value=${Name}-nat-b},{Key=Project,Value=$Name}]" `
+        --tag-specifications "ResourceType=elastic-ip,Tags=[{Key=Name,Value=${Name}-nat-b},{Key=Project,Value=$Name},{Key=env,Value=$script:Env}]" `
         --query AllocationId
     $nat1 = Get-AwsText ec2 create-nat-gateway --subnet-id $pub1 --allocation-id $eip1 `
-        --tag-specifications "ResourceType=natgateway,Tags=[{Key=Name,Value=${Name}-nat-a},{Key=Project,Value=$Name}]" `
+        --tag-specifications "ResourceType=natgateway,Tags=[{Key=Name,Value=${Name}-nat-a},{Key=Project,Value=$Name},{Key=env,Value=$script:Env}]" `
         --query NatGateway.NatGatewayId
     $nat2 = Get-AwsText ec2 create-nat-gateway --subnet-id $pub2 --allocation-id $eip2 `
-        --tag-specifications "ResourceType=natgateway,Tags=[{Key=Name,Value=${Name}-nat-b},{Key=Project,Value=$Name}]" `
+        --tag-specifications "ResourceType=natgateway,Tags=[{Key=Name,Value=${Name}-nat-b},{Key=Project,Value=$Name},{Key=env,Value=$script:Env}]" `
         --query NatGateway.NatGatewayId
     Set-State EIP_1 $eip1
     Set-State EIP_2 $eip2
@@ -344,9 +375,9 @@ function Build-Network([string]$Az1, [string]$Az2) {
     Set-State PRIVATE_RT_2 $priRt2
 
     $vpce = Get-AwsText ec2 create-vpc-endpoint --vpc-id $vpc --vpc-endpoint-type Gateway `
-        --service-name com.amazonaws.us-east-1.s3 `
+        --service-name "com.amazonaws.$($env:REGION).s3" `
         --route-table-ids $priRt1 $priRt2 $isoRt `
-        --tag-specifications "ResourceType=vpc-endpoint,Tags=[{Key=Name,Value=${Name}-s3},{Key=Project,Value=$Name}]" `
+        --tag-specifications "ResourceType=vpc-endpoint,Tags=[{Key=Name,Value=${Name}-s3},{Key=Project,Value=$Name},{Key=env,Value=$script:Env}]" `
         --query VpcEndpoint.VpcEndpointId
     Set-State S3_VPCE $vpce
 }
@@ -362,7 +393,7 @@ function Build-FlowLogs {
         --log-destination "arn:aws:s3:::$bucket/flow" `
         --max-aggregation-interval 60 `
         --destination-options 'FileFormat=parquet,HiveCompatiblePartitions=true,PerHourPartition=true' `
-        --tag-specifications "ResourceType=vpc-flow-log,Tags=[{Key=Name,Value=${Name}-flow},{Key=Project,Value=$Name}]"
+        --tag-specifications "ResourceType=vpc-flow-log,Tags=[{Key=Name,Value=${Name}-flow},{Key=Project,Value=$Name},{Key=env,Value=$script:Env}]"
     if ($result.Unsuccessful) {
         throw "flow log was not created; check the bucket policy. $($result | Out-String)"
     }
@@ -381,13 +412,13 @@ function Build-Iam {
         })
     }
     $trustArg = Get-FileArg $trust
-    Invoke-Aws iam create-role --role-name "${Name}-app-role" --assume-role-policy-document $trustArg --tags "Key=Project,Value=$Name"
+    Invoke-Aws iam create-role --role-name "${Name}-app-role" --assume-role-policy-document $trustArg --tags "Key=Project,Value=$Name" "Key=env,Value=$script:Env"
     Invoke-Aws iam attach-role-policy --role-name "${Name}-app-role" --policy-arn arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-    Invoke-Aws iam create-role --role-name "${Name}-bastion-role" --assume-role-policy-document $trustArg --tags "Key=Project,Value=$Name"
+    Invoke-Aws iam create-role --role-name "${Name}-bastion-role" --assume-role-policy-document $trustArg --tags "Key=Project,Value=$Name" "Key=env,Value=$script:Env"
     Invoke-Aws iam attach-role-policy --role-name "${Name}-bastion-role" --policy-arn arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-    Invoke-Aws iam create-instance-profile --instance-profile-name "${Name}-app-profile"
+    Invoke-Aws iam create-instance-profile --instance-profile-name "${Name}-app-profile" --tags "Key=Project,Value=$Name" "Key=env,Value=$script:Env"
     Invoke-Aws iam add-role-to-instance-profile --instance-profile-name "${Name}-app-profile" --role-name "${Name}-app-role"
-    Invoke-Aws iam create-instance-profile --instance-profile-name "${Name}-bastion-profile"
+    Invoke-Aws iam create-instance-profile --instance-profile-name "${Name}-bastion-profile" --tags "Key=Project,Value=$Name" "Key=env,Value=$script:Env"
     Invoke-Aws iam add-role-to-instance-profile --instance-profile-name "${Name}-bastion-profile" --role-name "${Name}-bastion-role"
     Set-State APP_ROLE "${Name}-app-role"
     Set-State BASTION_ROLE "${Name}-bastion-role"
@@ -408,7 +439,7 @@ function Build-SecurityGroups {
         --description 'App ingress from ALB on 80 and bastion on 22' --query GroupId
     $bastion = Get-AwsText ec2 create-security-group --vpc-id $vpc --group-name "${Name}-bastion" `
         --description 'Bastion SSH from operator IP' --query GroupId
-    Invoke-Aws ec2 create-tags --resources $alb $app $bastion --tags "Key=Project,Value=$Name"
+    Invoke-Aws ec2 create-tags --resources $alb $app $bastion --tags "Key=Project,Value=$Name" "Key=env,Value=$script:Env"
 
     $cfPl = Get-AwsText ec2 describe-managed-prefix-lists `
         --filters 'Name=prefix-list-name,Values=com.amazonaws.global.cloudfront.origin-facing' `
@@ -435,7 +466,8 @@ function Build-Bastion {
     Set-State AMI_ID $ami
     $keyName = "${Name}-bastion"
     $keyPath = Join-Path $Root "$keyName.pem"
-    $kp = Get-AwsJson ec2 create-key-pair --key-name $keyName
+    $kp = Get-AwsJson ec2 create-key-pair --key-name $keyName `
+        --tag-specifications "ResourceType=key-pair,Tags=[{Key=Name,Value=$keyName},{Key=Project,Value=$Name},{Key=env,Value=$script:Env}]"
     Write-Utf8NoBom $keyPath ($kp.KeyMaterial.Trim() + "`n")
     Set-State KEY_NAME $keyName
 
@@ -449,7 +481,7 @@ function Build-Bastion {
         --metadata-options 'HttpTokens=required,HttpEndpoint=enabled,HttpPutResponseHopLimit=1' `
         --count 1 `
         --block-device-mappings '[{"DeviceName":"/dev/xvda","Ebs":{"VolumeSize":8,"VolumeType":"gp3","Encrypted":true,"DeleteOnTermination":true}}]' `
-        --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=${Name}-bastion},{Key=Project,Value=$Name}]" `
+        --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=${Name}-bastion},{Key=Project,Value=$Name},{Key=env,Value=$script:Env}]" `
         --query 'Instances[0].InstanceId'
     Set-State BASTION_ID $id
     Invoke-Aws ec2 wait instance-running --instance-ids $id
@@ -465,7 +497,7 @@ function Build-Alb {
         --scheme internet-facing `
         --subnets (Get-State PUBLIC_SUBNET_1) (Get-State PUBLIC_SUBNET_2) `
         --security-groups (Get-State ALB_SG) `
-        --tags "Key=Name,Value=${Name}-alb" "Key=Project,Value=$Name" `
+        --tags "Key=Name,Value=${Name}-alb" "Key=Project,Value=$Name" "Key=env,Value=$script:Env" `
         --query 'LoadBalancers[0].LoadBalancerArn'
     Set-State ALB_ARN $arn
     Invoke-Aws elbv2 wait load-balancer-available --load-balancer-arns $arn
@@ -484,7 +516,7 @@ function Build-Alb {
         --healthy-threshold-count 2 `
         --unhealthy-threshold-count 3 `
         --matcher HttpCode=200 `
-        --tags "Key=Name,Value=${Name}-app-tg" "Key=Project,Value=$Name" `
+        --tags "Key=Name,Value=${Name}-app-tg" "Key=Project,Value=$Name" "Key=env,Value=$script:Env" `
         --query 'TargetGroups[0].TargetGroupArn'
     Invoke-Aws elbv2 modify-target-group-attributes --target-group-arn $tg `
         --attributes 'Key=deregistration_delay.timeout_seconds,Value=30'
@@ -560,14 +592,14 @@ systemctl enable --now httpd
         })
         TagSpecifications = (New-JsonList @{
             ResourceType = 'instance'
-            Tags = (New-JsonList @{ Key = 'Name'; Value = "${Name}-app" } @{ Key = 'Project'; Value = $Name })
+            Tags = (New-JsonList @{ Key = 'Name'; Value = "${Name}-app" } @{ Key = 'Project'; Value = $Name } @{ Key = 'env'; Value = $script:Env })
         })
     }
     $ltId = Get-AwsText ec2 create-launch-template `
         --launch-template-name "${Name}-app" `
         --version-description 'sample-httpd' `
         --launch-template-data (Get-FileArg $ltPath) `
-        --tag-specifications "ResourceType=launch-template,Tags=[{Key=Name,Value=${Name}-app},{Key=Project,Value=$Name}]" `
+        --tag-specifications "ResourceType=launch-template,Tags=[{Key=Name,Value=${Name}-app},{Key=Project,Value=$Name},{Key=env,Value=$script:Env}]" `
         --query LaunchTemplate.LaunchTemplateId
     Set-State LAUNCH_TEMPLATE_ID $ltId
 }
@@ -582,7 +614,7 @@ function Build-Asg {
         --target-group-arns (Get-State TG_ARN) `
         --health-check-type ELB `
         --health-check-grace-period 300 `
-        --tags "Key=Name,Value=${Name}-app,PropagateAtLaunch=true" "Key=Project,Value=$Name,PropagateAtLaunch=true"
+        --tags "Key=Name,Value=${Name}-app,PropagateAtLaunch=true" "Key=Project,Value=$Name,PropagateAtLaunch=true" "Key=env,Value=$script:Env,PropagateAtLaunch=true"
     Set-State ASG_NAME "${Name}-app"
 
     $albArn = Get-State ALB_ARN
@@ -628,7 +660,7 @@ function Build-Waf {
         --description 'CloudFront edge ACL: IP reputation, common rules, known bad inputs' `
         --rules (Get-FileArg $rulesPath) `
         --visibility-config "SampledRequestsEnabled=true,CloudWatchMetricsEnabled=true,MetricName=${Name}-cloudfront" `
-        --tags "Key=Project,Value=$Name" `
+        --tags "Key=Project,Value=$Name" "Key=env,Value=$script:Env" `
         --query 'Summary.[ARN,Id]'
     $parts = @($summary -split '\s+' | Where-Object { $_ })
     if ($parts.Count -lt 2) { throw "unexpected WAF create output: $summary" }
@@ -695,6 +727,9 @@ function Build-CloudFront {
     $created = Get-AwsJson cloudfront create-distribution --distribution-config (Get-FileArg $cfPath)
     Set-State CF_ID ([string]$created.Distribution.Id)
     Set-State CF_DOMAIN ([string]$created.Distribution.DomainName)
+    $cfArn = "arn:aws:cloudfront::$($script:S['ACCOUNT_ID']):distribution/$($created.Distribution.Id)"
+    Invoke-Aws cloudfront tag-resource --resource $cfArn `
+        --tags "Items=[{Key=Name,Value=${Name}-cloudfront},{Key=Project,Value=$Name},{Key=env,Value=$script:Env}]"
 }
 
 function Build-Alarm {
@@ -709,11 +744,12 @@ function Build-Alarm {
         --statistic Sum --period 60 --evaluation-periods 1 --threshold 10 `
         --comparison-operator GreaterThanThreshold `
         --treat-missing-data notBreaching `
-        --tags "Key=Project,Value=$Name"
+        --tags "Key=Project,Value=$Name" "Key=env,Value=$script:Env"
     Set-State ALARM_NAME "${Name}-alb-5xx"
 }
 
 function Start-Build {
+    Import-WaConfig
     if (-not (Get-Command aws -ErrorAction SilentlyContinue)) {
         throw 'AWS CLI is not on PATH'
     }
@@ -738,9 +774,9 @@ function Start-Build {
     Set-State ACCOUNT_ID $account
     Set-State AZ1 $az1
     Set-State AZ2 $az2
-    Write-Log "account=$account region=us-east-1 az=$az1,$az2"
+    Write-Log "account=$account region=$($env:REGION) az=$az1,$az2"
 
-    $sshCidr = $BastionSshCidr
+    $sshCidr = $env:BASTION_SSH_CIDR
     if ([string]::IsNullOrWhiteSpace($sshCidr)) {
         $ip = (Invoke-RestMethod -Uri 'https://checkip.amazonaws.com').ToString().Trim()
         $sshCidr = "$ip/32"
@@ -844,6 +880,7 @@ function Remove-IamRole([string]$Profile, [string]$RoleName) {
 }
 
 function Start-Destroy {
+    Import-WaConfig
     if (-not (Test-Path -LiteralPath $script:StateFile)) {
         throw "no state file at $script:StateFile"
     }

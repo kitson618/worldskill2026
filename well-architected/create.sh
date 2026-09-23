@@ -31,19 +31,46 @@
 # Does not deploy. Review, export AWS credentials, then run it yourself.
 set -euo pipefail
 export AWS_PAGER=""
-export AWS_DEFAULT_REGION=us-east-1
-export AWS_REGION=us-east-1
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
+CONFIG_FILE="${CONFIG_FILE:-$ROOT/config.env}"
 STATE_FILE="${STATE_FILE:-$ROOT/wa-state.env}"
-NAME="${NAME:-wa}"
-VPC_CIDR="10.0.0.0/16"
-# public / private / isolated, two AZs. Isolated has no default route.
-PUBLIC_CIDRS=(10.0.0.0/24 10.0.1.0/24)
-PRIVATE_CIDRS=(10.0.10.0/24 10.0.11.0/24)
-ISOLATED_CIDRS=(10.0.20.0/24 10.0.21.0/24)
-INSTANCE_TYPE="${INSTANCE_TYPE:-t3.micro}"
-BASTION_SSH_CIDR="${BASTION_SSH_CIDR:-}"
+
+load_config() {
+  [[ -f "$CONFIG_FILE" ]] || die "missing config file: $CONFIG_FILE"
+  local line key val
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%%#*}"
+    line="${line#"${line%%[![:space:]]*}"}"
+    line="${line%"${line##*[![:space:]]}"}"
+    [[ -z "$line" ]] && continue
+    key="${line%%=*}"
+    val="${line#*=}"
+    [[ "$key" =~ ^[A-Z][A-Z0-9_]*$ ]] || die "bad config key: $key"
+    if [[ -z "${!key+x}" ]]; then
+      printf -v "$key" '%s' "$val"
+      export "$key"
+    fi
+  done < "$CONFIG_FILE"
+  : "${REGION:?set REGION in $CONFIG_FILE}"
+  : "${NAME:?set NAME in $CONFIG_FILE}"
+  : "${ENV:?set ENV in $CONFIG_FILE}"
+  : "${VPC_NAME:?set VPC_NAME in $CONFIG_FILE}"
+  : "${VPC_CIDR:?set VPC_CIDR in $CONFIG_FILE}"
+  : "${PUBLIC_CIDR_1:?}" "${PUBLIC_CIDR_2:?}" "${PRIVATE_CIDR_1:?}" "${PRIVATE_CIDR_2:?}"
+  : "${ISOLATED_CIDR_1:?}" "${ISOLATED_CIDR_2:?}" "${INSTANCE_TYPE:?}"
+  [[ "$REGION" == "us-east-1" ]] || die "REGION must be us-east-1 (CloudFront WAF)"
+  export AWS_DEFAULT_REGION="$REGION"
+  export AWS_REGION="$REGION"
+  PUBLIC_CIDRS=("$PUBLIC_CIDR_1" "$PUBLIC_CIDR_2")
+  PRIVATE_CIDRS=("$PRIVATE_CIDR_1" "$PRIVATE_CIDR_2")
+  ISOLATED_CIDRS=("$ISOLATED_CIDR_1" "$ISOLATED_CIDR_2")
+}
+
+# {Key=Name,Value=...},{Key=Project,Value=...},{Key=env,Value=prd}
+name_tags() {
+  printf '[{Key=Name,Value=%s},{Key=Project,Value=%s},{Key=env,Value=%s}]' "$1" "$NAME" "$ENV"
+}
 WORKDIR=""
 
 log() { printf '==> %s\n' "$*"; }
@@ -73,6 +100,7 @@ require_region() {
 # ---------------------------------------------------------------------------
 
 build() {
+  load_config
   need aws
   need python3
   need curl
@@ -89,9 +117,10 @@ build() {
   az2="$(aws ec2 describe-availability-zones --filters Name=state,Values=available --query 'AvailabilityZones[1].ZoneName' --output text)"
   [[ -n "$az1" && -n "$az2" && "$az1" != "$az2" ]] || die "need two availability zones"
   state_set ACCOUNT_ID "$account"
+  ACCOUNT_ID="$account"
   state_set AZ1 "$az1"
   state_set AZ2 "$az2"
-  log "account=$account region=us-east-1 az=$az1,$az2"
+  log "account=$account region=$REGION az=$az1,$az2"
 
   if [[ -z "$BASTION_SSH_CIDR" ]]; then
     BASTION_SSH_CIDR="$(curl -fsS https://checkip.amazonaws.com | tr -d '[:space:]')/32"
@@ -216,7 +245,7 @@ json.dump({
 }, sys.stdout)
 PY
   aws s3api put-bucket-policy --bucket "$bucket" --policy "file://${WORKDIR}/bucket-policy.json"
-  aws s3api put-bucket-tagging --bucket "$bucket" --tagging "TagSet=[{Key=Name,Value=${bucket}},{Key=Project,Value=${NAME}}]"
+  aws s3api put-bucket-tagging --bucket "$bucket" --tagging "TagSet=[{Key=Name,Value=${bucket}},{Key=Project,Value=${NAME}},{Key=env,Value=${ENV}}]"
   state_set BUCKET "$bucket"
   BUCKET="$bucket"
 }
@@ -226,7 +255,7 @@ build_network() {
   log "VPC $VPC_CIDR"
   local vpc igw
   vpc="$(aws ec2 create-vpc --cidr-block "$VPC_CIDR" --tag-specifications \
-    "ResourceType=vpc,Tags=[{Key=Name,Value=${NAME}-vpc},{Key=Project,Value=${NAME}}]" \
+    "ResourceType=vpc,Tags=[{Key=Name,Value=${VPC_NAME}},{Key=Project,Value=${NAME}},{Key=env,Value=${ENV}}]" \
     --query 'Vpc.VpcId' --output text)"
   aws ec2 modify-vpc-attribute --vpc-id "$vpc" --enable-dns-support
   aws ec2 modify-vpc-attribute --vpc-id "$vpc" --enable-dns-hostnames
@@ -234,7 +263,7 @@ build_network() {
   VPC_ID="$vpc"
 
   igw="$(aws ec2 create-internet-gateway --tag-specifications \
-    "ResourceType=internet-gateway,Tags=[{Key=Name,Value=${NAME}-igw},{Key=Project,Value=${NAME}}]" \
+    "ResourceType=internet-gateway,Tags=[{Key=Name,Value=${NAME}-igw},{Key=Project,Value=${NAME}},{Key=env,Value=${ENV}}]" \
     --query 'InternetGateway.InternetGatewayId' --output text)"
   aws ec2 attach-internet-gateway --internet-gateway-id "$igw" --vpc-id "$vpc"
   state_set IGW_ID "$igw"
@@ -273,16 +302,16 @@ build_network() {
   log "NAT Gateway per AZ (private subnets only)"
   local eip1 eip2 nat1 nat2
   eip1="$(aws ec2 allocate-address --domain vpc --tag-specifications \
-    "ResourceType=elastic-ip,Tags=[{Key=Name,Value=${NAME}-nat-a},{Key=Project,Value=${NAME}}]" \
+    "ResourceType=elastic-ip,Tags=[{Key=Name,Value=${NAME}-nat-a},{Key=Project,Value=${NAME}},{Key=env,Value=${ENV}}]" \
     --query AllocationId --output text)"
   eip2="$(aws ec2 allocate-address --domain vpc --tag-specifications \
-    "ResourceType=elastic-ip,Tags=[{Key=Name,Value=${NAME}-nat-b},{Key=Project,Value=${NAME}}]" \
+    "ResourceType=elastic-ip,Tags=[{Key=Name,Value=${NAME}-nat-b},{Key=Project,Value=${NAME}},{Key=env,Value=${ENV}}]" \
     --query AllocationId --output text)"
   nat1="$(aws ec2 create-nat-gateway --subnet-id "$pub1" --allocation-id "$eip1" --tag-specifications \
-    "ResourceType=natgateway,Tags=[{Key=Name,Value=${NAME}-nat-a},{Key=Project,Value=${NAME}}]" \
+    "ResourceType=natgateway,Tags=[{Key=Name,Value=${NAME}-nat-a},{Key=Project,Value=${NAME}},{Key=env,Value=${ENV}}]" \
     --query 'NatGateway.NatGatewayId' --output text)"
   nat2="$(aws ec2 create-nat-gateway --subnet-id "$pub2" --allocation-id "$eip2" --tag-specifications \
-    "ResourceType=natgateway,Tags=[{Key=Name,Value=${NAME}-nat-b},{Key=Project,Value=${NAME}}]" \
+    "ResourceType=natgateway,Tags=[{Key=Name,Value=${NAME}-nat-b},{Key=Project,Value=${NAME}},{Key=env,Value=${ENV}}]" \
     --query 'NatGateway.NatGatewayId' --output text)"
   state_set EIP_1 "$eip1"
   state_set EIP_2 "$eip2"
@@ -305,9 +334,9 @@ build_network() {
   vpce="$(aws ec2 create-vpc-endpoint \
     --vpc-id "$vpc" \
     --vpc-endpoint-type Gateway \
-    --service-name com.amazonaws.us-east-1.s3 \
+    --service-name "com.amazonaws.${REGION}.s3" \
     --route-table-ids "$pri_rt1" "$pri_rt2" "$iso_rt" \
-    --tag-specifications "ResourceType=vpc-endpoint,Tags=[{Key=Name,Value=${NAME}-s3},{Key=Project,Value=${NAME}}]" \
+    --tag-specifications "ResourceType=vpc-endpoint,Tags=[{Key=Name,Value=${NAME}-s3},{Key=Project,Value=${NAME}},{Key=env,Value=${ENV}}]" \
     --query 'VpcEndpoint.VpcEndpointId' --output text)"
   state_set S3_VPCE "$vpce"
 }
@@ -316,7 +345,7 @@ make_subnet() {
   local vpc="$1" cidr="$2" az="$3" public="$4" name="$5"
   local id
   id="$(aws ec2 create-subnet --vpc-id "$vpc" --cidr-block "$cidr" --availability-zone "$az" \
-    --tag-specifications "ResourceType=subnet,Tags=[{Key=Name,Value=${name}},{Key=Project,Value=${NAME}}]" \
+    --tag-specifications "ResourceType=subnet,Tags=[{Key=Name,Value=${name}},{Key=Project,Value=${NAME}},{Key=env,Value=${ENV}}]" \
     --query 'Subnet.SubnetId' --output text)"
   if [[ "$public" == true ]]; then
     aws ec2 modify-subnet-attribute --subnet-id "$id" --map-public-ip-on-launch
@@ -327,7 +356,7 @@ make_subnet() {
 make_rt() {
   local vpc="$1" name="$2"
   aws ec2 create-route-table --vpc-id "$vpc" \
-    --tag-specifications "ResourceType=route-table,Tags=[{Key=Name,Value=${name}},{Key=Project,Value=${NAME}}]" \
+    --tag-specifications "ResourceType=route-table,Tags=[{Key=Name,Value=${name}},{Key=Project,Value=${NAME}},{Key=env,Value=${ENV}}]" \
     --query 'RouteTable.RouteTableId' --output text
 }
 
@@ -342,7 +371,7 @@ build_flow_logs() {
     --log-destination "arn:aws:s3:::${BUCKET}/flow" \
     --max-aggregation-interval 60 \
     --destination-options FileFormat=parquet,HiveCompatiblePartitions=true,PerHourPartition=true \
-    --tag-specifications "ResourceType=vpc-flow-log,Tags=[{Key=Name,Value=${NAME}-flow},{Key=Project,Value=${NAME}}]" \
+    --tag-specifications "ResourceType=vpc-flow-log,Tags=[{Key=Name,Value=${NAME}-flow},{Key=Project,Value=${NAME}},{Key=env,Value=${ENV}}]" \
     --output json)"
   if python3 -c 'import json,sys; data=json.loads(sys.argv[1]); raise SystemExit(1 if data.get("Unsuccessful") else 0)' "$result"; then
     :
@@ -360,17 +389,19 @@ build_iam() {
 {"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"ec2.amazonaws.com"},"Action":"sts:AssumeRole"}]}
 EOF
   aws iam create-role --role-name "${NAME}-app-role" --assume-role-policy-document "file://${trust}" \
-    --tags Key=Project,Value="${NAME}" >/dev/null
+    --tags Key=Project,Value="${NAME}" Key=env,Value="${ENV}" >/dev/null
   aws iam attach-role-policy --role-name "${NAME}-app-role" \
     --policy-arn arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
   aws iam create-role --role-name "${NAME}-bastion-role" --assume-role-policy-document "file://${trust}" \
-    --tags Key=Project,Value="${NAME}" >/dev/null
+    --tags Key=Project,Value="${NAME}" Key=env,Value="${ENV}" >/dev/null
   aws iam attach-role-policy --role-name "${NAME}-bastion-role" \
     --policy-arn arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
 
-  aws iam create-instance-profile --instance-profile-name "${NAME}-app-profile" >/dev/null
+  aws iam create-instance-profile --instance-profile-name "${NAME}-app-profile" \
+    --tags Key=Project,Value="${NAME}" Key=env,Value="${ENV}" >/dev/null
   aws iam add-role-to-instance-profile --instance-profile-name "${NAME}-app-profile" --role-name "${NAME}-app-role"
-  aws iam create-instance-profile --instance-profile-name "${NAME}-bastion-profile" >/dev/null
+  aws iam create-instance-profile --instance-profile-name "${NAME}-bastion-profile" \
+    --tags Key=Project,Value="${NAME}" Key=env,Value="${ENV}" >/dev/null
   aws iam add-role-to-instance-profile --instance-profile-name "${NAME}-bastion-profile" --role-name "${NAME}-bastion-role"
   state_set APP_ROLE "${NAME}-app-role"
   state_set BASTION_ROLE "${NAME}-bastion-role"
@@ -391,7 +422,7 @@ build_security_groups() {
     --description "App ingress from ALB on 80 and bastion on 22" --query GroupId --output text)"
   bastion="$(aws ec2 create-security-group --vpc-id "$VPC_ID" --group-name "${NAME}-bastion" \
     --description "Bastion SSH from operator IP" --query GroupId --output text)"
-  aws ec2 create-tags --resources "$alb" "$app" "$bastion" --tags "Key=Project,Value=${NAME}"
+  aws ec2 create-tags --resources "$alb" "$app" "$bastion" --tags "Key=Project,Value=${NAME}" "Key=env,Value=${ENV}"
 
   cf_pl="$(aws ec2 describe-managed-prefix-lists \
     --filters Name=prefix-list-name,Values=com.amazonaws.global.cloudfront.origin-facing \
@@ -425,7 +456,9 @@ build_bastion() {
   key_name="${NAME}-bastion"
   key_path="${ROOT}/${key_name}.pem"
   umask 077
-  aws ec2 create-key-pair --key-name "$key_name" --query KeyMaterial --output text > "$key_path"
+  aws ec2 create-key-pair --key-name "$key_name" \
+    --tag-specifications "ResourceType=key-pair,Tags=$(name_tags "$key_name")" \
+    --query KeyMaterial --output text > "$key_path"
   chmod 400 "$key_path"
   state_set KEY_NAME "$key_name"
 
@@ -440,7 +473,7 @@ build_bastion() {
     --metadata-options HttpTokens=required,HttpEndpoint=enabled,HttpPutResponseHopLimit=1 \
     --count 1 \
     --block-device-mappings '[{"DeviceName":"/dev/xvda","Ebs":{"VolumeSize":8,"VolumeType":"gp3","Encrypted":true,"DeleteOnTermination":true}}]' \
-    --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=${NAME}-bastion},{Key=Project,Value=${NAME}}]" \
+    --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=${NAME}-bastion},{Key=Project,Value=${NAME}},{Key=env,Value=${ENV}}]" \
     --query 'Instances[0].InstanceId' --output text)"
   state_set BASTION_ID "$id"
   aws ec2 wait instance-running --instance-ids "$id"
@@ -456,7 +489,7 @@ build_alb() {
     --scheme internet-facing \
     --subnets "$PUBLIC_SUBNET_1" "$PUBLIC_SUBNET_2" \
     --security-groups "$ALB_SG" \
-    --tags Key=Name,Value="${NAME}-alb" Key=Project,Value="${NAME}" \
+    --tags Key=Name,Value="${NAME}-alb" Key=Project,Value="${NAME}" Key=env,Value="${ENV}" \
     --query 'LoadBalancers[0].LoadBalancerArn' --output text)"
   state_set ALB_ARN "$arn"
   ALB_ARN="$arn"
@@ -476,7 +509,7 @@ build_alb() {
     --healthy-threshold-count 2 \
     --unhealthy-threshold-count 3 \
     --matcher HttpCode=200 \
-    --tags Key=Name,Value="${NAME}-app-tg" Key=Project,Value="${NAME}" \
+    --tags Key=Name,Value="${NAME}-app-tg" Key=Project,Value="${NAME}" Key=env,Value="${ENV}" \
     --query 'TargetGroups[0].TargetGroupArn' --output text)"
   aws elbv2 modify-target-group-attributes --target-group-arn "$tg" \
     --attributes Key=deregistration_delay.timeout_seconds,Value=30 >/dev/null
@@ -539,9 +572,9 @@ systemctl enable --now httpd
 EOF
   local b64
   b64="$(base64 < "$WORKDIR/userdata.sh" | tr -d '\n')"
-  python3 - "$AMI_ID" "$INSTANCE_TYPE" "$APP_PROFILE_ARN" "$APP_SG" "$b64" "$NAME" > "$WORKDIR/lt.json" <<'PY'
+  python3 - "$AMI_ID" "$INSTANCE_TYPE" "$APP_PROFILE_ARN" "$APP_SG" "$b64" "$NAME" "$ENV" > "$WORKDIR/lt.json" <<'PY'
 import json, sys
-ami, itype, profile, sg, userdata, name = sys.argv[1:]
+ami, itype, profile, sg, userdata, name, env = sys.argv[1:]
 json.dump({
   "ImageId": ami,
   "InstanceType": itype,
@@ -567,6 +600,7 @@ json.dump({
     "Tags": [
       {"Key": "Name", "Value": f"{name}-app"},
       {"Key": "Project", "Value": name},
+      {"Key": "env", "Value": env},
     ],
   }],
 }, sys.stdout)
@@ -576,7 +610,7 @@ PY
     --launch-template-name "${NAME}-app" \
     --version-description "sample-httpd" \
     --launch-template-data "file://${WORKDIR}/lt.json" \
-    --tag-specifications "ResourceType=launch-template,Tags=[{Key=Name,Value=${NAME}-app},{Key=Project,Value=${NAME}}]" \
+    --tag-specifications "ResourceType=launch-template,Tags=[{Key=Name,Value=${NAME}-app},{Key=Project,Value=${NAME}},{Key=env,Value=${ENV}}]" \
     --query 'LaunchTemplate.LaunchTemplateId' --output text)"
   state_set LAUNCH_TEMPLATE_ID "$lt_id"
   LAUNCH_TEMPLATE_ID="$lt_id"
@@ -592,7 +626,7 @@ build_asg() {
     --target-group-arns "$TG_ARN" \
     --health-check-type ELB \
     --health-check-grace-period 300 \
-    --tags "Key=Name,Value=${NAME}-app,PropagateAtLaunch=true" "Key=Project,Value=${NAME},PropagateAtLaunch=true"
+    --tags "Key=Name,Value=${NAME}-app,PropagateAtLaunch=true" "Key=Project,Value=${NAME},PropagateAtLaunch=true" "Key=env,Value=${ENV},PropagateAtLaunch=true"
   state_set ASG_NAME "${NAME}-app"
 
   local label
@@ -639,7 +673,7 @@ PY
     --description "CloudFront edge ACL: IP reputation, common rules, known bad inputs" \
     --rules "file://${WORKDIR}/waf-rules.json" \
     --visibility-config SampledRequestsEnabled=true,CloudWatchMetricsEnabled=true,MetricName="${NAME}-cloudfront" \
-    --tags Key=Project,Value="${NAME}" \
+    --tags Key=Project,Value="${NAME}" Key=env,Value="${ENV}" \
     --query 'Summary.[ARN,Id]' --output text)
   state_set WAF_ARN "$arn"
   state_set WAF_ID "$id"
@@ -699,6 +733,9 @@ PY
   domain="$(aws cloudfront get-distribution --id "$id" --query 'Distribution.DomainName' --output text)"
   state_set CF_ID "$id"
   state_set CF_DOMAIN "$domain"
+  aws cloudfront tag-resource \
+    --resource "arn:aws:cloudfront::${ACCOUNT_ID}:distribution/${id}" \
+    --tags "Items=$(name_tags "${NAME}-cloudfront")"
 }
 
 build_alarm() {
@@ -712,7 +749,7 @@ build_alarm() {
     --statistic Sum --period 60 --evaluation-periods 1 --threshold 10 \
     --comparison-operator GreaterThanThreshold \
     --treat-missing-data notBreaching \
-    --tags Key=Project,Value="${NAME}" >/dev/null
+    --tags Key=Project,Value="${NAME}" Key=env,Value="${ENV}" >/dev/null
   state_set ALARM_NAME "${NAME}-alb-5xx"
 }
 
