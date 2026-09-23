@@ -1,6 +1,6 @@
 # `app.yml` — Unicorn GameDay 基礎設施模板
 
-AWS CLI 對照腳本：[app.sh](app.sh)（bash，對應這份模板的全部已啟用資源）。
+AWS CLI 分段教學：[cli/README.md](cli/README.md)，完整腳本：[app.sh](app.sh)。SDK 教學（boto3）：[sdk/README.md](sdk/README.md)。
 
 CloudFormation 模板（706 行，`AWSTemplateFormatVersion: 2010-09-09`）。`Description` 只有一個字：`Unicorn`。這是中國區 Cloud Raiser / HengHa GameDay 的 **選手端應用堆疊**，不是出題方的 nested stack（那個是同目錄的 `StackSet-HengHa-CloudRaiser-game-nested-stack.yml`）。
 

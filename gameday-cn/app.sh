@@ -284,7 +284,10 @@ json.dump({
     "EnableAcceptEncodingGzip": True,
     "EnableAcceptEncodingBrotli": True,
     "HeadersConfig": {"HeaderBehavior": "none"},
-    "QueryStringsConfig": {"QueryStringBehavior": "whitelist", "QueryStrings": [qs]}
+    "QueryStringsConfig": {
+      "QueryStringBehavior": "whitelist",
+      "QueryStrings": {"Quantity": 1, "Items": [qs]}
+    }
   }
 }, sys.stdout)
 PY
@@ -303,7 +306,8 @@ json.dump({
     "CustomOriginConfig": {
       "HTTPPort": 80,
       "HTTPSPort": 443,
-      "OriginProtocolPolicy": "http-only"
+      "OriginProtocolPolicy": "http-only",
+      "OriginSslProtocols": {"Quantity": 1, "Items": ["TLSv1.2"]}
     }
   }]},
   "DefaultCacheBehavior": {
